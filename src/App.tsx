@@ -5,15 +5,18 @@ import { MetricConfig, GlobalChartType, YAxisScaleConfig } from './types/log';
 import { ChartViewer } from './components/ChartViewer';
 import { MetricSelector } from './components/MetricSelector';
 import { JsonInputModal } from './components/JsonInputModal';
+import { DocumentationModal } from './components/DocumentationModal';
 import {
   UploadCloud,
   Monitor,
   Download,
   Package,
+  BookOpen,
 } from 'lucide-react';
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDocOpen, setIsDocOpen] = useState(false);
 
   // Initial parse result
   const [parseResult, setParseResult] = useState(() => {
@@ -171,6 +174,15 @@ export default function App() {
           </a>
 
           <button
+            onClick={() => setIsDocOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
+            title="Abrir documentação estilo GitHub (README.md)"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Documentação</span>
+          </button>
+
+          <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors"
           >
@@ -235,6 +247,12 @@ export default function App() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onLoadData={handleLoadData}
+      />
+
+      {/* Modal for GitHub-style documentation */}
+      <DocumentationModal
+        isOpen={isDocOpen}
+        onClose={() => setIsDocOpen(false)}
       />
     </div>
   );
