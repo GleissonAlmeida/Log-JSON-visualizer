@@ -51,33 +51,8 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 ---
 
 ## 🖥️ Layout da Interface
-
+![description](https://github.com/GleissonAlmeida/Log-JSON-visualizer/blob/main/public/Tela.png)
 ```
-+------------------------------------+---------------------------------------------------------------+
-| PAINEL ESQUERDO (CONTROLES)        | PAINEL DIREITO (GRÁFICO INTERATIVO)                           |
-+------------------------------------+---------------------------------------------------------------+
-| 📁 Origem dos Dados JSON           | EIXO X: timestamp                                             |
-|   [Carregar Arquivo JSON]          | Mostrando 60 de 60 registros (Ptos 1-60)                     |
-|                                    | [100%] [50%] [25%] [Últimos 30]  [📥 Salvar PNG] [⛶ Tela Cheia]|
-| 1. EIXO X (REFERÊNCIA HORIZONTAL)  |                                                               |
-|   [ timestamp (Temporal)       v ] |  100 +-------●---●---●---●---●-------+ 1016 (Eixo Y1 Dir)     |
-|                                    |      |       \                       |                        |
-| 2. TIPO E ESTILO DO GRÁFICO        |   50 |        \      bateria_pct     | 1013                   |
-|   [Linha] [Área] [Barras] [Degraus]|      |         \     pressao_hpa     |                        |
-|   [x] Pontos no gráfico            |    0 +----------●---●---●---●-------+ 1010                   |
-|   [x] Eixo Y duplo (L / R)         |      08:00    08:15    08:30    08:45                        |
-|   -- Escala do Eixo Y --           +---------------------------------------------------------------+
-|   [Auto] [Manual]                  | Filtro de Faixa Temporal: Ponto 1 até 60                      |
-|   [ ] Iniciar em 0  [ ] Escala Log | Início: [===O=======================] 1                       |
-|                                    | Fim:    [=======================O===] 60           [↺ Redefinir|
-| 3. VARIÁVEIS SELECIONADAS (3/5)    +---------------------------------------------------------------+
-|   🔍 [Filtrar variáveis...]        |
-|   [x] ● bateria_pct   [Eixo Esq Y] |
-|   [x] ● pressao_hpa   [Eixo Dir Y1]|
-|   [x] ● temperatura   [Eixo Esq Y] |
-+------------------------------------+
-```
-
 ---
 
 ## 📦 Download do Executável para Windows 11
