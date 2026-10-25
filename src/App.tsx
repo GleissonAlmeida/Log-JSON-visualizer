@@ -20,8 +20,9 @@ export default function App() {
 
   // Initial parse result
   const [parseResult, setParseResult] = useState(() => {
-    const initialJson = JSON.stringify(SAMPLE_DATASETS[0].data, null, 2);
-    return parseJsonLog(initialJson, SAMPLE_DATASETS[0].name);
+    const ds = SAMPLE_DATASETS[0];
+    const initialJson = ds.rawString || JSON.stringify(ds.data, null, 2);
+    return parseJsonLog(initialJson, ds.name);
   });
 
   // Chart configuration state

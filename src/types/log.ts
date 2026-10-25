@@ -12,6 +12,8 @@ export interface FieldInfo {
   avg?: number;
   median?: number;
   sampleValues: any[];
+  validCount?: number;
+  category?: string;
 }
 
 export interface MetricConfig {

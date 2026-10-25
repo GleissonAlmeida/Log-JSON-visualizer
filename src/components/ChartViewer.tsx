@@ -80,19 +80,30 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
   // Determine if we need right Y axis
   const hasRightAxis = dualAxis && selectedMetrics.some(m => m.yAxis === 'y1');
+  const [forwardFill, setForwardFill] = React.useState(false);
 
   // Build datasets
   const datasets = React.useMemo(() => {
     return selectedMetrics.map(metric => {
+      let lastKnownVal: number | null = null;
       const data = filteredRecords.map(r => {
         const val = r[metric.key];
-        if (typeof val === 'number') return val;
-        const parsed = Number(val);
-        return isNaN(parsed) ? null : parsed;
+        if (typeof val === 'number') {
+          lastKnownVal = val;
+          return val;
+        }
+        if (val !== undefined && val !== null) {
+          const parsed = Number(val);
+          if (!isNaN(parsed)) {
+            lastKnownVal = parsed;
+            return parsed;
+          }
+        }
+        return forwardFill ? lastKnownVal : null;
       });
 
       const baseColor = metric.color;
-      const isStepped = chartType === 'stepped';
+      const isStepped = chartType === 'stepped' || forwardFill;
 
       return {
         label: metric.label || metric.key,
@@ -109,9 +120,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         pointBorderWidth: 1.5,
         fill: fillArea,
         yAxisID: dualAxis ? metric.yAxis : 'y',
+        spanGaps: true, // Crucial for sparse CAN telemetry logs!
       };
     });
-  }, [selectedMetrics, filteredRecords, chartType, tension, showPoints, fillArea, dualAxis]);
+  }, [selectedMetrics, filteredRecords, chartType, tension, showPoints, fillArea, dualAxis, forwardFill]);
 
   const options: ChartOptions<any> = {
     responsive: true,
@@ -164,12 +176,16 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
             if (!items.length) return '';
             const idx = items[0].dataIndex;
             const record = filteredRecords[idx];
-            const xVal = xAxisKey === '_index' ? `Registro #${startIdx + idx + 1}` : `${xAxisKey}: ${record[xAxisKey]}`;
-            return xVal;
+            if (xAxisKey === '_index') return `Registro #${startIdx + idx + 1}`;
+            if (xAxisKey === '#') return `Passo / Frame CAN #${record['#'] ?? (startIdx + idx)}`;
+            return `${xAxisKey}: ${record[xAxisKey]}`;
           },
           label: (context: any) => {
             const val = context.parsed.y;
-            const formatted = val !== null && val !== undefined ? Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 3 }) : 'N/D';
+            if (val === null || val === undefined || isNaN(val)) {
+              return ` ${context.dataset.label}: (sem transmissão neste tick)`;
+            }
+            const formatted = Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
             return ` ${context.dataset.label}: ${formatted}`;
           },
         },
@@ -292,7 +308,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-400 tracking-wider">
-              EIXO X: <span className="text-indigo-400 font-mono">{xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey}</span>
+              EIXO X:{' '}
+              <span className="text-indigo-400 font-mono">
+                {xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey === '#' ? 'Passo / Frame CAN (#)' : xAxisKey}
+              </span>
             </span>
             <span className="text-xs text-slate-500 font-mono tabular-nums">
               Mostrando {filteredRecords.length} de {records.length} registros (Ptos {startIdx + 1}–{endIdx + 1})
@@ -302,6 +321,20 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* CAN Forward-Fill (Zero-Order Hold) toggle */}
+          <button
+            onClick={() => setForwardFill(!forwardFill)}
+            className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors flex items-center gap-1.5 ${
+              forwardFill
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 ring-1 ring-amber-500/30'
+                : 'bg-slate-800 text-slate-300 border-slate-700/60 hover:text-white hover:bg-slate-700'
+            }`}
+            title="Preenchimento CAN: mantém o último valor recebido para cobrir gaps em telemetrias multiplexadas"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${forwardFill ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'}`} />
+            <span>Forward-Fill {forwardFill ? 'ON' : 'OFF'}</span>
+          </button>
+
           {/* Quick window zoom buttons */}
           <div className="hidden sm:flex items-center gap-1 p-0.5 bg-slate-800/80 rounded-lg border border-slate-700/60 text-xs">
             <button

@@ -66,7 +66,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
   };
 
   const handleSelectSample = (sample: SampleDataset) => {
-    const jsonStr = JSON.stringify(sample.data, null, 2);
+    const jsonStr = sample.rawString || JSON.stringify(sample.data, null, 2);
     onLoadData(jsonStr, sample.name);
     onClose();
   };

@@ -53,10 +53,25 @@ export function executeCProgram(
 
   let parsed: any;
   try {
-    parsed = JSON.parse(jsonString);
-  } catch (err: any) {
-    log(`[ERRO] Falha no json_parse(): sintaxe JSON invalida: ${err.message}`);
-    throw new Error('Falha no analisador JSON em C: verifique a sintaxe.');
+    parsed = JSON.parse(jsonString.trim());
+  } catch {
+    // NDJSON / JSON Lines support
+    const lines = jsonString.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const parsedLines: any[] = [];
+    for (const l of lines) {
+      try {
+        parsedLines.push(JSON.parse(l.endsWith(',') ? l.slice(0, -1) : l));
+      } catch {
+        // ignore malformed line
+      }
+    }
+    if (parsedLines.length > 0) {
+      parsed = parsedLines;
+      log(`[INFO] Analisador NDJSON: ${parsedLines.length} linhas de telemetria processadas.`);
+    } else {
+      log(`[ERRO] Falha no json_parse(): sintaxe JSON invalida`);
+      throw new Error('Falha no analisador JSON em C: verifique a sintaxe.');
+    }
   }
 
   // Se o nó raiz for objeto com data/logs/records, pega o array
@@ -98,38 +113,59 @@ export function executeCProgram(
     };
   }
 
-  // Detecta campos disponíveis no primeiro registro
-  const sample = arrayNode[0] || {};
-  const allKeys = Object.keys(sample);
+  // Detecta todas as chaves em todos os registros (suporte a telemetria multiplexada esparsa)
+  const allKeysSet = new Set<string>();
+  arrayNode.forEach(rec => {
+    if (rec && typeof rec === 'object') {
+      Object.keys(rec).forEach(k => allKeysSet.add(k));
+    }
+  });
 
-  // Auto-detecta Eixo X
+  // Auto-detecta Eixo X (prioriza '#' como contador de quadros CAN)
   let xKey = xKeyParam;
   if (!xKey) {
-    const candidates = ['timestamp', 'horario', 'time', 'date', 'minuto', 'tempo', 'id', 'step'];
-    for (const c of candidates) {
-      if (sample[c] !== undefined) {
-        xKey = c;
-        break;
+    if (allKeysSet.has('#')) {
+      xKey = '#';
+    } else {
+      const candidates = ['timestamp', 'horario', 'time', 'date', 'minuto', 'tempo', 'id', 'step', 'tick'];
+      for (const c of candidates) {
+        if (allKeysSet.has(c)) {
+          xKey = c;
+          break;
+        }
       }
+      if (!xKey) xKey = '_index';
     }
-    if (!xKey) xKey = '_index';
   }
   log(`[INFO] Eixo X definido como: '${xKey}'`);
 
-  // Detecta métricas numéricas disponíveis
-  const numericKeys: string[] = [];
-  allKeys.forEach((k) => {
-    if (k !== xKey) {
-      const val = sample[k];
-      if (typeof val === 'number' || (!isNaN(Number(val)) && typeof val === 'string' && val.trim() !== '')) {
-        numericKeys.push(k);
+  // Detecta métricas numéricas disponíveis em qualquer registro
+  const numericKeysSet = new Set<string>();
+  arrayNode.forEach(rec => {
+    if (!rec || typeof rec !== 'object') return;
+    Object.keys(rec).forEach(k => {
+      if (k !== xKey && k !== '_index') {
+        const val = rec[k];
+        if (typeof val === 'number' || (!isNaN(Number(val)) && typeof val === 'string' && val.trim() !== '')) {
+          numericKeysSet.add(k);
+        }
       }
-    }
+    });
+  });
+  const numericKeys = Array.from(numericKeysSet);
+
+  // Ordena métricas preferindo sinais veiculares dinâmicos
+  const highInterest = ['engine_speed', 'wheelbasedvehiclespeed', 'fa_speed', 'fuel_level', 'turret_angle', 'speed', 'torque', 'rpm'];
+  numericKeys.sort((a, b) => {
+    const aMatch = highInterest.some(h => a.toLowerCase().includes(h));
+    const bMatch = highInterest.some(h => b.toLowerCase().includes(h));
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return a.localeCompare(b);
   });
 
   // Métricas selecionadas
   let selected = requestedMetrics && requestedMetrics.length > 0 ? requestedMetrics : numericKeys.slice(0, 3);
-  // Garante que só seleciona métricas existentes
   selected = selected.filter((k) => numericKeys.includes(k));
   if (selected.length === 0 && numericKeys.length > 0) {
     selected = [numericKeys[0]];

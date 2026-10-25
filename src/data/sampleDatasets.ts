@@ -1,9 +1,23 @@
+import { CAN_LOG_RAW } from './canLogData';
+
 export interface SampleDataset {
   id: string;
   name: string;
   description: string;
   badge: string;
   data: any[];
+  rawString?: string;
+}
+
+function parseCanLogData() {
+  try {
+    return CAN_LOG_RAW.trim()
+      .split(/\r?\n/)
+      .filter((l) => l.trim().length > 0)
+      .map((l) => JSON.parse(l.trim()));
+  } catch {
+    return [];
+  }
 }
 
 // Generate realistic time-series points
@@ -88,6 +102,14 @@ function generateWearableData() {
 }
 
 export const SAMPLE_DATASETS: SampleDataset[] = [
+  {
+    id: 'can-bus-log',
+    name: 'Log_112 (Telemetria CAN Bus Veicular)',
+    description: 'Log multiplexado militar/automotivo com 202 frames (# 0 a 532): engine_speed, WheelBasedVehicleSpeed, Fuel_Level, Turret_Angle, pressões e atuadores.',
+    badge: 'CAN Bus Real',
+    data: parseCanLogData(),
+    rawString: CAN_LOG_RAW,
+  },
   {
     id: 'iot-sensors',
     name: 'Telemetria IoT & Sensores Industriais',

@@ -53,13 +53,24 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   totalRecords,
 }) => {
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
-  const numericFields = fields.filter(f => f.isNumeric);
+  const numericFields = fields.filter(f => f.isNumeric && f.key !== '#');
   const otherFields = fields.filter(f => !f.isNumeric);
 
-  const filteredNumeric = numericFields.filter(f =>
-    f.key.toLowerCase().includes(search.toLowerCase())
-  );
+  const availableCategories = React.useMemo(() => {
+    const cats = new Set<string>();
+    numericFields.forEach(f => {
+      if (f.category) cats.add(f.category);
+    });
+    return Array.from(cats);
+  }, [numericFields]);
+
+  const filteredNumeric = numericFields.filter(f => {
+    const matchSearch = f.key.toLowerCase().includes(search.toLowerCase());
+    const matchCat = selectedCategory === 'Todas' || f.category === selectedCategory;
+    return matchSearch && matchCat;
+  });
 
   const isMetricSelected = (key: string) => selectedMetrics.some(m => m.key === key);
   const getMetricConfig = (key: string) => selectedMetrics.find(m => m.key === key);
@@ -132,10 +143,13 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           onChange={(e) => onXAxisChange(e.target.value)}
           className="w-full px-3 py-2 text-sm bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
         >
+          {fields.some(f => f.key === '#') && (
+            <option value="#"># Passo / Frame CAN (#)</option>
+          )}
           <option value="_index"># Índice Sequencial (1, 2, 3...)</option>
           <optgroup label="Campos de Data & Horário Detectados">
             {fields
-              .filter(f => f.isDateCandidate)
+              .filter(f => f.isDateCandidate && f.key !== '#')
               .map(f => (
                 <option key={f.key} value={f.key}>
                   {f.key} (Temporal)
@@ -144,7 +158,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           </optgroup>
           <optgroup label="Outros Campos Disponíveis">
             {fields
-              .filter(f => !f.isDateCandidate)
+              .filter(f => !f.isDateCandidate && f.key !== '#')
               .map(f => (
                 <option key={f.key} value={f.key}>
                   {f.key} ({f.type})
@@ -402,15 +416,49 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
 
         {/* Search input if more than 4 metrics */}
         {numericFields.length > 4 && (
-          <div className="relative mb-2.5">
+          <div className="relative mb-2">
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Filtrar variáveis..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
             />
+          </div>
+        )}
+
+        {/* Category Filter Pills (if multiple categories found, e.g. in CAN logs) */}
+        {availableCategories.length > 1 && (
+          <div className="flex flex-wrap gap-1 mb-2.5">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('Todas')}
+              className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+                selectedCategory === 'Todas'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+              }`}
+            >
+              Todas ({numericFields.length})
+            </button>
+            {availableCategories.map((cat) => {
+              const count = numericFields.filter(f => f.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+                    selectedCategory === cat
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -450,12 +498,22 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     )}
 
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-semibold text-slate-200 truncate font-mono">
-                        {field.key}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-200 truncate font-mono">
+                          {field.key}
+                        </span>
+                        {field.validCount !== undefined && totalRecords && field.validCount < totalRecords && (
+                          <span
+                            className="text-[9px] text-slate-400 bg-slate-900 border border-slate-800 px-1 rounded font-mono shrink-0"
+                            title={`Esta métrica aparece em ${field.validCount} dos ${totalRecords} quadros CAN`}
+                          >
+                            {field.validCount}/{totalRecords} pts
+                          </span>
+                        )}
+                      </div>
                       {field.min !== undefined && field.max !== undefined && (
                         <span className="text-[10px] text-slate-500 font-mono tabular-nums">
-                          min: {Number(field.min).toFixed(1)} · max: {Number(field.max).toFixed(1)} · méd: {Number(field.avg).toFixed(1)}
+                          mín: {Number(field.min).toFixed(1)} · máx: {Number(field.max).toFixed(1)} · méd: {Number(field.avg).toFixed(1)}
                         </span>
                       )}
                     </div>
