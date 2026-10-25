@@ -3,6 +3,7 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  LogarithmicScale,
   PointElement,
   LineElement,
   BarElement,
@@ -13,12 +14,13 @@ import {
   ChartOptions,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { MetricConfig, GlobalChartType } from '../types/log';
+import { MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
 import { Download, Sliders, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  LogarithmicScale,
   PointElement,
   LineElement,
   BarElement,
@@ -39,6 +41,7 @@ interface ChartViewerProps {
   range: [number, number];
   onRangeChange: (range: [number, number]) => void;
   dualAxis: boolean;
+  yAxisScale: YAxisScaleConfig;
   onToggleMetricAxis?: (key: string) => void;
 }
 
@@ -53,6 +56,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   range,
   onRangeChange,
   dualAxis,
+  yAxisScale,
 }) => {
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -188,9 +192,12 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         },
       },
       y: {
-        type: 'linear',
+        type: yAxisScale.scaleType,
         display: true,
         position: 'left',
+        beginAtZero: yAxisScale.beginAtZero,
+        min: yAxisScale.mode === 'manual' && yAxisScale.minY !== '' ? Number(yAxisScale.minY) : undefined,
+        max: yAxisScale.mode === 'manual' && yAxisScale.maxY !== '' ? Number(yAxisScale.maxY) : undefined,
         grid: {
           color: 'rgba(51, 65, 85, 0.35)',
         },
@@ -205,9 +212,12 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
       ...(hasRightAxis
         ? {
             y1: {
-              type: 'linear',
+              type: yAxisScale.scaleType,
               display: true,
               position: 'right',
+              beginAtZero: yAxisScale.beginAtZero,
+              min: yAxisScale.mode === 'manual' && yAxisScale.minY1 !== '' ? Number(yAxisScale.minY1) : undefined,
+              max: yAxisScale.mode === 'manual' && yAxisScale.maxY1 !== '' ? Number(yAxisScale.maxY1) : undefined,
               grid: {
                 drawOnChartArea: false, // avoid overlapping grid lines
               },

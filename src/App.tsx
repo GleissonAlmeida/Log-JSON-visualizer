@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseJsonLog, PALETTE } from './utils/jsonParser';
 import { SAMPLE_DATASETS } from './data/sampleDatasets';
-import { MetricConfig, GlobalChartType } from './types/log';
+import { MetricConfig, GlobalChartType, YAxisScaleConfig } from './types/log';
 import { ChartViewer } from './components/ChartViewer';
 import { MetricSelector } from './components/MetricSelector';
 import { JsonInputModal } from './components/JsonInputModal';
@@ -38,6 +38,17 @@ export default function App() {
   const [showPoints, setShowPoints] = useState<boolean>(true);
   const [fillArea, setFillArea] = useState<boolean>(false);
   const [dualAxis, setDualAxis] = useState<boolean>(true);
+
+  // Y-Axis scale configuration
+  const [yAxisScale, setYAxisScale] = useState<YAxisScaleConfig>({
+    mode: 'auto',
+    beginAtZero: false,
+    scaleType: 'linear',
+    minY: '',
+    maxY: '',
+    minY1: '',
+    maxY1: '',
+  });
 
   // Range window slider [start, end]
   const [range, setRange] = useState<[number, number]>([0, parseResult.records.length - 1]);
@@ -185,14 +196,14 @@ export default function App() {
               onClearAllMetrics={handleClearAllMetrics}
               chartType={chartType}
               onChartTypeChange={setChartType}
-              tension={tension}
-              onTensionChange={setTension}
               showPoints={showPoints}
               onTogglePoints={() => setShowPoints(!showPoints)}
               fillArea={fillArea}
               onToggleFill={() => setFillArea(!fillArea)}
               dualAxis={dualAxis}
               onToggleDualAxis={() => setDualAxis(!dualAxis)}
+              yAxisScale={yAxisScale}
+              onYAxisScaleChange={setYAxisScale}
               onOpenLoadModal={() => setIsModalOpen(true)}
               onLoadFile={handleDirectFile}
               datasetName={datasetName}
@@ -213,6 +224,7 @@ export default function App() {
               range={range}
               onRangeChange={setRange}
               dualAxis={dualAxis}
+              yAxisScale={yAxisScale}
             />
           </div>
         </div>

@@ -222,15 +222,34 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          </label>\n");
     fprintf(fp, "        </div>\n");
 
-    fprintf(fp, "        <div class=\"slider-box\">\n");
-    fprintf(fp, "          <span>Suavização de Curva:</span>\n");
-    fprintf(fp, "          <div style=\"display: flex; align-items: center; gap: 8px;\">\n");
-    fprintf(fp, "            <input type=\"range\" id=\"rngTension\" min=\"0\" max=\"0.4\" step=\"0.05\" value=\"0.25\" oninput=\"updateTension(this.value)\" style=\"width: 90px; accent-color: #4f46e5;\">\n");
-    fprintf(fp, "            <span id=\"lblTension\" style=\"font-family: 'JetBrains Mono'; color: #f1f5f9; width: 30px;\">0.25</span>\n");
+    fprintf(fp, "        <div style=\"margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px;\">\n");
+    fprintf(fp, "          <div style=\"display: flex; justify-content: space-between; align-items: center;\">\n");
+    fprintf(fp, "            <span style=\"font-size: 11px; font-weight: 600; color: #cbd5e1;\">Escala do Eixo Y</span>\n");
+    fprintf(fp, "            <div style=\"display: flex; gap: 2px; background: #070d19; padding: 2px; border-radius: 6px; border: 1px solid #1e293b;\">\n");
+    fprintf(fp, "              <button id=\"btnScaleAuto\" class=\"btn-type active\" onclick=\"setScaleMode('auto')\" style=\"padding: 3px 8px; font-size: 10px;\">Auto</button>\n");
+    fprintf(fp, "              <button id=\"btnScaleManual\" class=\"btn-type\" onclick=\"setScaleMode('manual')\" style=\"padding: 3px 8px; font-size: 10px;\">Manual</button>\n");
+    fprintf(fp, "            </div>\n");
+    fprintf(fp, "          </div>\n");
+    fprintf(fp, "          <div class=\"toggles-row\" style=\"margin-top: 0;\">\n");
+    fprintf(fp, "            <label class=\"toggle-label\"><input type=\"checkbox\" id=\"chkZero\" onchange=\"updateChart()\"> Iniciar em 0</label>\n");
+    fprintf(fp, "            <label class=\"toggle-label\"><input type=\"checkbox\" id=\"chkLog\" onchange=\"updateChart()\"> Escala Log</label>\n");
+    fprintf(fp, "          </div>\n");
+    fprintf(fp, "          <div id=\"boxManualScale\" style=\"display: none; background: #070d19; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; flex-direction: column; gap: 6px;\">\n");
+    fprintf(fp, "            <div style=\"font-size: 10px; color: #94a3b8; font-weight: 600;\">Limites Eixo Y (Esquerdo):</div>\n");
+    fprintf(fp, "            <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
+    fprintf(fp, "              <input type=\"number\" id=\"inpMinY\" placeholder=\"Mín Y\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px;\">\n");
+    fprintf(fp, "              <input type=\"number\" id=\"inpMaxY\" placeholder=\"Máx Y\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px;\">\n");
+    fprintf(fp, "            </div>\n");
+    fprintf(fp, "            <div id=\"boxY1Limits\" style=\"margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;\">\n");
+    fprintf(fp, "              <div style=\"font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y1 (Direito):</div>\n");
+    fprintf(fp, "              <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMinY1\" placeholder=\"Mín Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY1\" placeholder=\"Máx Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
+    fprintf(fp, "              </div>\n");
+    fprintf(fp, "            </div>\n");
     fprintf(fp, "          </div>\n");
     fprintf(fp, "        </div>\n");
     fprintf(fp, "      </div>\n");
-
     fprintf(fp, "      <hr style=\"border: 0; border-top: 1px solid #1e293b; margin: 2px 0;\" />\n");
 
     /* 3. Variáveis Selecionadas */
@@ -338,12 +357,21 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    let tension = 0.25;\n");
     fprintf(fp, "    let chartInstance = null;\n");
     fprintf(fp, "    let rangeStart = 0;\n");
-    fprintf(fp, "    let rangeEnd = rawData.length - 1;\n\n");
+    fprintf(fp, "    let rangeEnd = rawData.length - 1;\n");
+    fprintf(fp, "    let scaleMode = 'auto';\n\n");
 
     fprintf(fp, "    function updateChart() {\n");
     fprintf(fp, "      const xKey = document.getElementById('selectX').value;\n");
     fprintf(fp, "      const showPoints = document.getElementById('chkPoints').checked;\n");
     fprintf(fp, "      const isDualAxis = document.getElementById('chkDualAxis').checked;\n");
+    fprintf(fp, "      const isManual = (scaleMode === 'manual');\n");
+    fprintf(fp, "      const beginZero = document.getElementById('chkZero').checked;\n");
+    fprintf(fp, "      const isLog = document.getElementById('chkLog').checked;\n");
+    fprintf(fp, "      const scaleType = isLog ? 'logarithmic' : 'linear';\n");
+    fprintf(fp, "      const minYVal = isManual && document.getElementById('inpMinY').value !== '' ? parseFloat(document.getElementById('inpMinY').value) : undefined;\n");
+    fprintf(fp, "      const maxYVal = isManual && document.getElementById('inpMaxY').value !== '' ? parseFloat(document.getElementById('inpMaxY').value) : undefined;\n");
+    fprintf(fp, "      const minY1Val = isManual && document.getElementById('inpMinY1').value !== '' ? parseFloat(document.getElementById('inpMinY1').value) : undefined;\n");
+    fprintf(fp, "      const maxY1Val = isManual && document.getElementById('inpMaxY1').value !== '' ? parseFloat(document.getElementById('inpMaxY1').value) : undefined;\n");
     fprintf(fp, "      document.getElementById('dispXKey').innerText = xKey === '_index' ? 'Índice sequencial' : xKey;\n\n");
 
     fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
@@ -394,14 +422,21 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          },\n");
     fprintf(fp, "          scales: {\n");
     fprintf(fp, "            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 } },\n");
-    fprintf(fp, "            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } },\n");
-    fprintf(fp, "            ...(hasRightAxis ? { y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } } } } : {})\n");
+    fprintf(fp, "            y: { type: scaleType, beginAtZero: beginZero, min: minYVal, max: maxYVal, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } },\n");
+    fprintf(fp, "            ...(hasRightAxis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } } } } : {})\n");
     fprintf(fp, "          }\n");
     fprintf(fp, "        }\n");
     fprintf(fp, "      });\n");
     fprintf(fp, "    }\n\n");
 
     /* Funções de controle */
+    fprintf(fp, "    function setScaleMode(m) {\n");
+    fprintf(fp, "      scaleMode = m;\n");
+    fprintf(fp, "      document.getElementById('btnScaleAuto').classList.toggle('active', m === 'auto');\n");
+    fprintf(fp, "      document.getElementById('btnScaleManual').classList.toggle('active', m === 'manual');\n");
+    fprintf(fp, "      document.getElementById('boxManualScale').style.display = (m === 'manual' ? 'flex' : 'none');\n");
+    fprintf(fp, "      updateChart();\n");
+    fprintf(fp, "    }\n\n");
     fprintf(fp, "    function setChartType(t) {\n");
     fprintf(fp, "      chartType = t;\n");
     fprintf(fp, "      ['Line','Area','Bar','Stepped'].forEach(id => {\n");
@@ -410,13 +445,6 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      });\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
-
-    fprintf(fp, "    function updateTension(v) {\n");
-    fprintf(fp, "      tension = parseFloat(v);\n");
-    fprintf(fp, "      document.getElementById('lblTension').innerText = tension.toFixed(2);\n");
-    fprintf(fp, "      updateChart();\n");
-    fprintf(fp, "    }\n");
-
     fprintf(fp, "    function toggleMetric(key) {\n");
     fprintf(fp, "      const chk = document.getElementById('chk_' + key);\n");
     fprintf(fp, "      document.getElementById('item_' + key).classList.toggle('selected', chk.checked);\n");

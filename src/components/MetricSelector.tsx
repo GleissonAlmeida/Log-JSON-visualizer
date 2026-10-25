@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FieldInfo, MetricConfig, GlobalChartType } from '../types/log';
+import { FieldInfo, MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
 import { PALETTE } from '../utils/jsonParser';
-import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText } from 'lucide-react';
+import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw } from 'lucide-react';
 
 interface MetricSelectorProps {
   fields: FieldInfo[];
@@ -14,14 +14,14 @@ interface MetricSelectorProps {
   onClearAllMetrics: () => void;
   chartType: GlobalChartType;
   onChartTypeChange: (type: GlobalChartType) => void;
-  tension: number;
-  onTensionChange: (val: number) => void;
   showPoints: boolean;
   onTogglePoints: () => void;
   fillArea: boolean;
   onToggleFill: () => void;
   dualAxis: boolean;
   onToggleDualAxis: () => void;
+  yAxisScale: YAxisScaleConfig;
+  onYAxisScaleChange: (scale: YAxisScaleConfig) => void;
   onOpenLoadModal?: () => void;
   onLoadFile?: (file: File) => void;
   datasetName?: string;
@@ -39,14 +39,14 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   onClearAllMetrics,
   chartType,
   onChartTypeChange,
-  tension,
-  onTensionChange,
   showPoints,
   onTogglePoints,
   fillArea,
   onToggleFill,
   dualAxis,
   onToggleDualAxis,
+  yAxisScale,
+  onYAxisScaleChange,
   onOpenLoadModal,
   onLoadFile,
   datasetName,
@@ -238,24 +238,141 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           </label>
         </div>
 
-        {/* Tension slider if line mode */}
-        {chartType !== 'bar' && chartType !== 'stepped' && (
-          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400 bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
-            <span>Suavização de Curva:</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min={0}
-                max={0.4}
-                step={0.05}
-                value={tension}
-                onChange={(e) => onTensionChange(Number(e.target.value))}
-                className="w-24 accent-indigo-500 cursor-pointer"
-              />
-              <span className="font-mono text-slate-300 w-8 text-right">{tension.toFixed(2)}</span>
+        {/* Ajuste da Escala do Eixo Y */}
+        <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+              Escala do Eixo Y
+            </span>
+
+            <div className="flex items-center gap-1 p-0.5 bg-slate-950 rounded-md border border-slate-800 text-[11px]">
+              <button
+                type="button"
+                onClick={() => onYAxisScaleChange({ ...yAxisScale, mode: 'auto' })}
+                className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                  yAxisScale.mode === 'auto'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Auto
+              </button>
+              <button
+                type="button"
+                onClick={() => onYAxisScaleChange({ ...yAxisScale, mode: 'manual' })}
+                className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                  yAxisScale.mode === 'manual'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Manual
+              </button>
             </div>
           </div>
-        )}
+
+          {/* Opções de Escala */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer bg-slate-950/70 p-2 rounded-lg border border-slate-800 hover:border-slate-700">
+              <input
+                type="checkbox"
+                checked={yAxisScale.beginAtZero}
+                onChange={(e) => onYAxisScaleChange({ ...yAxisScale, beginAtZero: e.target.checked })}
+                className="accent-indigo-500 rounded"
+              />
+              <span>Iniciar no zero (0)</span>
+            </label>
+
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer bg-slate-950/70 p-2 rounded-lg border border-slate-800 hover:border-slate-700">
+              <input
+                type="checkbox"
+                checked={yAxisScale.scaleType === 'logarithmic'}
+                onChange={(e) => onYAxisScaleChange({ ...yAxisScale, scaleType: e.target.checked ? 'logarithmic' : 'linear' })}
+                className="accent-indigo-500 rounded"
+              />
+              <span>Escala Log</span>
+            </label>
+          </div>
+
+          {/* Inputs de Mínimo e Máximo Manual */}
+          {yAxisScale.mode === 'manual' && (
+            <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                <span>Limites do Eixo Y (Esquerdo):</span>
+                <button
+                  type="button"
+                  onClick={() => onYAxisScaleChange({ ...yAxisScale, minY: '', maxY: '' })}
+                  className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" /> Redefinir
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Mínimo (Y)</label>
+                  <input
+                    type="number"
+                    placeholder="Auto"
+                    value={yAxisScale.minY}
+                    onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY: e.target.value === '' ? '' : Number(e.target.value) })}
+                    className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Máximo (Y)</label>
+                  <input
+                    type="number"
+                    placeholder="Auto"
+                    value={yAxisScale.maxY}
+                    onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY: e.target.value === '' ? '' : Number(e.target.value) })}
+                    className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Se Eixo Duplo estiver ativo, limites para Y1 */}
+              {dualAxis && (
+                <div className="pt-2 border-t border-slate-800/80 mt-1 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-sky-400 font-semibold font-mono">
+                    <span>Limites do Eixo Y1 (Direito):</span>
+                    <button
+                      type="button"
+                      onClick={() => onYAxisScaleChange({ ...yAxisScale, minY1: '', maxY1: '' })}
+                      className="flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" /> Redefinir
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Mínimo (Y1)</label>
+                      <input
+                        type="number"
+                        placeholder="Auto"
+                        value={yAxisScale.minY1}
+                        onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY1: e.target.value === '' ? '' : Number(e.target.value) })}
+                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Máximo (Y1)</label>
+                      <input
+                        type="number"
+                        placeholder="Auto"
+                        value={yAxisScale.maxY1}
+                        onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY1: e.target.value === '' ? '' : Number(e.target.value) })}
+                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="h-px bg-slate-800" />

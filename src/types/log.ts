@@ -33,3 +33,13 @@ export interface ParseResult {
 }
 
 export type GlobalChartType = 'line' | 'bar' | 'area' | 'stepped' | 'scatter';
+
+export interface YAxisScaleConfig {
+  mode: 'auto' | 'manual';
+  beginAtZero: boolean;
+  scaleType: 'linear' | 'logarithmic';
+  minY: number | '';
+  maxY: number | '';
+  minY1: number | '';
+  maxY1: number | '';
+}
