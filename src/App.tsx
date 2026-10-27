@@ -20,9 +20,8 @@ export default function App() {
 
   // Initial parse result
   const [parseResult, setParseResult] = useState(() => {
-    const ds = SAMPLE_DATASETS[0];
-    const initialJson = ds.rawString || JSON.stringify(ds.data, null, 2);
-    return parseJsonLog(initialJson, ds.name);
+    const initialJson = JSON.stringify(SAMPLE_DATASETS[0].data, null, 2);
+    return parseJsonLog(initialJson, SAMPLE_DATASETS[0].name);
   });
 
   // Chart configuration state
@@ -42,6 +41,7 @@ export default function App() {
   const [showPoints, setShowPoints] = useState<boolean>(true);
   const [fillArea, setFillArea] = useState<boolean>(false);
   const [dualAxis, setDualAxis] = useState<boolean>(true);
+  const [holdSparseTelemetry, setHoldSparseTelemetry] = useState<boolean>(true);
 
   // Y-Axis scale configuration
   const [yAxisScale, setYAxisScale] = useState<YAxisScaleConfig>({
@@ -215,6 +215,8 @@ export default function App() {
               onToggleFill={() => setFillArea(!fillArea)}
               dualAxis={dualAxis}
               onToggleDualAxis={() => setDualAxis(!dualAxis)}
+              holdSparseTelemetry={holdSparseTelemetry}
+              onToggleHoldSparseTelemetry={() => setHoldSparseTelemetry(!holdSparseTelemetry)}
               yAxisScale={yAxisScale}
               onYAxisScaleChange={setYAxisScale}
               onOpenLoadModal={() => setIsModalOpen(true)}
@@ -237,6 +239,7 @@ export default function App() {
               range={range}
               onRangeChange={setRange}
               dualAxis={dualAxis}
+              holdSparseTelemetry={holdSparseTelemetry}
               yAxisScale={yAxisScale}
             />
           </div>

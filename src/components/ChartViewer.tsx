@@ -42,6 +42,7 @@ interface ChartViewerProps {
   onRangeChange: (range: [number, number]) => void;
   dualAxis: boolean;
   yAxisScale: YAxisScaleConfig;
+  holdSparseTelemetry?: boolean;
   onToggleMetricAxis?: (key: string) => void;
 }
 
@@ -57,6 +58,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   onRangeChange,
   dualAxis,
   yAxisScale,
+  holdSparseTelemetry = true,
 }) => {
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,36 +76,45 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
       if (xAxisKey === '_index') return `#${startIdx + i + 1}`;
       const val = r[xAxisKey];
       if (val === undefined || val === null) return `#${startIdx + i + 1}`;
+      if (xAxisKey === '#') return `#${val}`;
       return String(val);
     });
   }, [filteredRecords, xAxisKey, startIdx]);
 
   // Determine if we need right Y axis
   const hasRightAxis = dualAxis && selectedMetrics.some(m => m.yAxis === 'y1');
-  const [forwardFill, setForwardFill] = React.useState(false);
 
-  // Build datasets
+  // Build datasets with spanGaps and forward-fill (Sample & Hold) for sparse/interleaved telemetry
   const datasets = React.useMemo(() => {
     return selectedMetrics.map(metric => {
-      let lastKnownVal: number | null = null;
+      // Find initial non-null value for clean forward-fill
+      let lastVal: number | null = null;
+      if (holdSparseTelemetry) {
+        const firstEntry = filteredRecords.find(r => {
+          const v = r[metric.key];
+          return v !== undefined && v !== null && !isNaN(Number(v));
+        });
+        if (firstEntry) lastVal = Number(firstEntry[metric.key]);
+      }
+
       const data = filteredRecords.map(r => {
         const val = r[metric.key];
-        if (typeof val === 'number') {
-          lastKnownVal = val;
+        if (typeof val === 'number' && !isNaN(val)) {
+          lastVal = val;
           return val;
         }
         if (val !== undefined && val !== null) {
           const parsed = Number(val);
           if (!isNaN(parsed)) {
-            lastKnownVal = parsed;
+            lastVal = parsed;
             return parsed;
           }
         }
-        return forwardFill ? lastKnownVal : null;
+        return holdSparseTelemetry ? lastVal : null;
       });
 
       const baseColor = metric.color;
-      const isStepped = chartType === 'stepped' || forwardFill;
+      const isStepped = chartType === 'stepped';
 
       return {
         label: metric.label || metric.key,
@@ -119,11 +130,11 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         pointBorderColor: '#ffffff',
         pointBorderWidth: 1.5,
         fill: fillArea,
+        spanGaps: true,
         yAxisID: dualAxis ? metric.yAxis : 'y',
-        spanGaps: true, // Crucial for sparse CAN telemetry logs!
       };
     });
-  }, [selectedMetrics, filteredRecords, chartType, tension, showPoints, fillArea, dualAxis, forwardFill]);
+  }, [selectedMetrics, filteredRecords, chartType, tension, showPoints, fillArea, dualAxis, holdSparseTelemetry]);
 
   const options: ChartOptions<any> = {
     responsive: true,
@@ -176,16 +187,12 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
             if (!items.length) return '';
             const idx = items[0].dataIndex;
             const record = filteredRecords[idx];
-            if (xAxisKey === '_index') return `Registro #${startIdx + idx + 1}`;
-            if (xAxisKey === '#') return `Passo / Frame CAN #${record['#'] ?? (startIdx + idx)}`;
-            return `${xAxisKey}: ${record[xAxisKey]}`;
+            const xVal = xAxisKey === '_index' ? `Registro #${startIdx + idx + 1}` : `${xAxisKey}: ${record[xAxisKey]}`;
+            return xVal;
           },
           label: (context: any) => {
             const val = context.parsed.y;
-            if (val === null || val === undefined || isNaN(val)) {
-              return ` ${context.dataset.label}: (sem transmissão neste tick)`;
-            }
-            const formatted = Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+            const formatted = val !== null && val !== undefined ? Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 3 }) : 'N/D';
             return ` ${context.dataset.label}: ${formatted}`;
           },
         },
@@ -308,10 +315,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-400 tracking-wider">
-              EIXO X:{' '}
-              <span className="text-indigo-400 font-mono">
-                {xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey === '#' ? 'Passo / Frame CAN (#)' : xAxisKey}
-              </span>
+              EIXO X: <span className="text-indigo-400 font-mono">{xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey}</span>
             </span>
             <span className="text-xs text-slate-500 font-mono tabular-nums">
               Mostrando {filteredRecords.length} de {records.length} registros (Ptos {startIdx + 1}–{endIdx + 1})
@@ -321,20 +325,6 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
-          {/* CAN Forward-Fill (Zero-Order Hold) toggle */}
-          <button
-            onClick={() => setForwardFill(!forwardFill)}
-            className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors flex items-center gap-1.5 ${
-              forwardFill
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 ring-1 ring-amber-500/30'
-                : 'bg-slate-800 text-slate-300 border-slate-700/60 hover:text-white hover:bg-slate-700'
-            }`}
-            title="Preenchimento CAN: mantém o último valor recebido para cobrir gaps em telemetrias multiplexadas"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${forwardFill ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'}`} />
-            <span>Forward-Fill {forwardFill ? 'ON' : 'OFF'}</span>
-          </button>
-
           {/* Quick window zoom buttons */}
           <div className="hidden sm:flex items-center gap-1 p-0.5 bg-slate-800/80 rounded-lg border border-slate-700/60 text-xs">
             <button

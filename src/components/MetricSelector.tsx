@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FieldInfo, MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
 import { PALETTE } from '../utils/jsonParser';
-import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw, ArrowDownAZ } from 'lucide-react';
 
 interface MetricSelectorProps {
   fields: FieldInfo[];
@@ -22,6 +22,8 @@ interface MetricSelectorProps {
   onToggleDualAxis: () => void;
   yAxisScale: YAxisScaleConfig;
   onYAxisScaleChange: (scale: YAxisScaleConfig) => void;
+  holdSparseTelemetry?: boolean;
+  onToggleHoldSparseTelemetry?: () => void;
   onOpenLoadModal?: () => void;
   onLoadFile?: (file: File) => void;
   datasetName?: string;
@@ -47,33 +49,38 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   onToggleDualAxis,
   yAxisScale,
   onYAxisScaleChange,
+  holdSparseTelemetry = true,
+  onToggleHoldSparseTelemetry,
   onOpenLoadModal,
   onLoadFile,
   datasetName,
   totalRecords,
 }) => {
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [sortSelectedFirst, setSortSelectedFirst] = useState(true);
 
-  const numericFields = fields.filter(f => f.isNumeric && f.key !== '#');
+  const numericFields = fields.filter(f => f.isNumeric);
   const otherFields = fields.filter(f => !f.isNumeric);
-
-  const availableCategories = React.useMemo(() => {
-    const cats = new Set<string>();
-    numericFields.forEach(f => {
-      if (f.category) cats.add(f.category);
-    });
-    return Array.from(cats);
-  }, [numericFields]);
-
-  const filteredNumeric = numericFields.filter(f => {
-    const matchSearch = f.key.toLowerCase().includes(search.toLowerCase());
-    const matchCat = selectedCategory === 'Todas' || f.category === selectedCategory;
-    return matchSearch && matchCat;
-  });
 
   const isMetricSelected = (key: string) => selectedMetrics.some(m => m.key === key);
   const getMetricConfig = (key: string) => selectedMetrics.find(m => m.key === key);
+
+  // Ordenação: primeiro os sinais selecionados, com classificação alfabética em cada grupo
+  const sortedNumeric = React.useMemo(() => {
+    return [...numericFields].sort((a, b) => {
+      if (sortSelectedFirst) {
+        const aSel = isMetricSelected(a.key);
+        const bSel = isMetricSelected(b.key);
+        if (aSel && !bSel) return -1;
+        if (!aSel && bSel) return 1;
+      }
+      return a.key.localeCompare(b.key, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, [numericFields, selectedMetrics, sortSelectedFirst]);
+
+  const filteredNumeric = sortedNumeric.filter(f =>
+    f.key.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0] && onLoadFile) {
@@ -143,13 +150,10 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           onChange={(e) => onXAxisChange(e.target.value)}
           className="w-full px-3 py-2 text-sm bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
         >
-          {fields.some(f => f.key === '#') && (
-            <option value="#"># Passo / Frame CAN (#)</option>
-          )}
           <option value="_index"># Índice Sequencial (1, 2, 3...)</option>
           <optgroup label="Campos de Data & Horário Detectados">
             {fields
-              .filter(f => f.isDateCandidate && f.key !== '#')
+              .filter(f => f.isDateCandidate)
               .map(f => (
                 <option key={f.key} value={f.key}>
                   {f.key} (Temporal)
@@ -158,7 +162,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           </optgroup>
           <optgroup label="Outros Campos Disponíveis">
             {fields
-              .filter(f => !f.isDateCandidate && f.key !== '#')
+              .filter(f => !f.isDateCandidate)
               .map(f => (
                 <option key={f.key} value={f.key}>
                   {f.key} ({f.type})
@@ -250,6 +254,26 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
             />
             <span>Eixo Y duplo (L / R)</span>
           </label>
+
+          {onToggleHoldSparseTelemetry && (
+            <label
+              className="col-span-2 flex items-center gap-2 text-slate-300 cursor-pointer bg-slate-950/70 p-2 rounded-lg border border-slate-800 hover:border-slate-700"
+              title="Zero-Order Hold: mantém o último valor conhecido para sinais de CAN bus ou sensores assíncronos/esparsos"
+            >
+              <input
+                type="checkbox"
+                checked={holdSparseTelemetry}
+                onChange={onToggleHoldSparseTelemetry}
+                className="accent-indigo-500 rounded"
+              />
+              <span className="flex items-center justify-between flex-1">
+                <span>Hold de Telemetria (CAN)</span>
+                <span className="text-[10px] text-indigo-400 bg-indigo-950/90 px-1.5 py-0.5 rounded border border-indigo-800/60 font-mono">
+                  Sample &amp; Hold
+                </span>
+              </span>
+            </label>
+          )}
         </div>
 
         {/* Ajuste da Escala do Eixo Y */}
@@ -414,53 +438,35 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           </div>
         </div>
 
-        {/* Search input if more than 4 metrics */}
-        {numericFields.length > 4 && (
-          <div className="relative mb-2">
+        {/* Barra de Busca e Ordenação */}
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Filtrar variáveis..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
-        )}
 
-        {/* Category Filter Pills (if multiple categories found, e.g. in CAN logs) */}
-        {availableCategories.length > 1 && (
-          <div className="flex flex-wrap gap-1 mb-2.5">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('Todas')}
-              className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
-                selectedCategory === 'Todas'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              Todas ({numericFields.length})
-            </button>
-            {availableCategories.map((cat) => {
-              const count = numericFields.filter(f => f.category === cat).length;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors ${
-                    selectedCategory === cat
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  {cat} ({count})
-                </button>
-              );
-            })}
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setSortSelectedFirst(!sortSelectedFirst)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border font-mono transition-all shrink-0 cursor-pointer ${
+              sortSelectedFirst
+                ? 'bg-indigo-950/80 text-indigo-300 border-indigo-700/80 shadow-sm'
+                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-300'
+            }`}
+            title={sortSelectedFirst ? 'Ordenação: Selecionados primeiro, depois A-Z' : 'Ordenação: Apenas alfabética A-Z'}
+          >
+            <ArrowDownAZ className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-[11px] font-medium hidden sm:inline">
+              {sortSelectedFirst ? 'Selecionados 1º' : 'A-Z Geral'}
+            </span>
+          </button>
+        </div>
 
         {/* List of numeric fields */}
         <div className="flex flex-col gap-1.5 max-h-[290px] overflow-y-auto pr-1">
@@ -469,19 +475,34 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
               Nenhuma variável numérica encontrada com este filtro.
             </div>
           ) : (
-            filteredNumeric.map((field) => {
+            filteredNumeric.map((field, idx) => {
               const selected = isMetricSelected(field.key);
               const config = getMetricConfig(field.key);
 
+              // Indicador visual quando começa o bloco de não-selecionados
+              const isFirstUnselected =
+                sortSelectedFirst &&
+                !selected &&
+                idx > 0 &&
+                isMetricSelected(filteredNumeric[idx - 1].key);
+
               return (
-                <div
-                  key={field.key}
-                  className={`flex items-center justify-between p-2 rounded-lg border transition-all ${
-                    selected
-                      ? 'bg-slate-800/90 border-slate-700 shadow-sm'
-                      : 'bg-slate-950/50 border-slate-800/70 hover:border-slate-700/70'
-                  }`}
-                >
+                <React.Fragment key={field.key}>
+                  {isFirstUnselected && (
+                    <div className="flex items-center gap-2 pt-2.5 pb-1 text-[10px] text-slate-500 uppercase tracking-wider font-mono">
+                      <div className="h-px bg-slate-800 flex-1" />
+                      <span>Outros Sinais ({numericFields.length - selectedMetrics.length})</span>
+                      <div className="h-px bg-slate-800 flex-1" />
+                    </div>
+                  )}
+
+                  <div
+                    className={`flex items-center justify-between p-2 rounded-lg border transition-all ${
+                      selected
+                        ? 'bg-slate-800/90 border-slate-700 shadow-sm'
+                        : 'bg-slate-950/50 border-slate-800/70 hover:border-slate-700/70'
+                    }`}
+                  >
                   <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0 mr-2">
                     <input
                       type="checkbox"
@@ -498,22 +519,12 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     )}
 
                     <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-200 truncate font-mono">
-                          {field.key}
-                        </span>
-                        {field.validCount !== undefined && totalRecords && field.validCount < totalRecords && (
-                          <span
-                            className="text-[9px] text-slate-400 bg-slate-900 border border-slate-800 px-1 rounded font-mono shrink-0"
-                            title={`Esta métrica aparece em ${field.validCount} dos ${totalRecords} quadros CAN`}
-                          >
-                            {field.validCount}/{totalRecords} pts
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-xs font-semibold text-slate-200 truncate font-mono">
+                        {field.key}
+                      </span>
                       {field.min !== undefined && field.max !== undefined && (
                         <span className="text-[10px] text-slate-500 font-mono tabular-nums">
-                          mín: {Number(field.min).toFixed(1)} · máx: {Number(field.max).toFixed(1)} · méd: {Number(field.avg).toFixed(1)}
+                          min: {Number(field.min).toFixed(1)} · max: {Number(field.max).toFixed(1)} · méd: {Number(field.avg).toFixed(1)}
                         </span>
                       )}
                     </div>
@@ -537,8 +548,9 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     </div>
                   )}
                 </div>
-              );
-            })
+              </React.Fragment>
+            );
+          })
           )}
         </div>
       </div>

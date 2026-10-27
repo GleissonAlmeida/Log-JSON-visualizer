@@ -56,65 +56,10 @@ function isDateString(val: any): boolean {
 
 // Check if a number is likely a Unix epoch (seconds or milliseconds)
 function isLikelyEpoch(val: number): boolean {
+  // Between 2000-01-01 and 2100-01-01 in seconds or ms
+  // ms: 946684800000 to 4102444800000
+  // s: 946684800 to 4102444800
   return (val >= 946684800 && val <= 4102444800) || (val >= 946684800000 && val <= 4102444800000);
-}
-
-// Categorize automotive CAN / telemetry signals
-export function categorizeField(key: string): string {
-  const k = key.toLowerCase();
-  if (k === '#' || k === '_index' || k === 'timestamp' || k === 'time' || k === 'date') return 'Temporal / Sequencial';
-  if (
-    k.includes('speed') ||
-    k.includes('torque') ||
-    k.includes('rpm') ||
-    k.includes('gear') ||
-    k.includes('clutch') ||
-    k.includes('eng_') ||
-    k.includes('engine') ||
-    k.includes('shaft') ||
-    k.includes('driveline')
-  ) {
-    return 'Motor & Transmissão';
-  }
-  if (
-    k.includes('turret') ||
-    k.includes('angle') ||
-    k.includes('roll') ||
-    k.includes('pitch') ||
-    k.includes('yaw') ||
-    k.includes('gyro') ||
-    k.includes('acc') ||
-    k.includes('swim')
-  ) {
-    return 'Dinâmica & Torre';
-  }
-  if (
-    k.includes('press') ||
-    k.includes('temp') ||
-    k.includes('fuel') ||
-    k.includes('volt') ||
-    k.includes('level') ||
-    k.includes('in_ana') ||
-    k.includes('hpa') ||
-    k.includes('batt')
-  ) {
-    return 'Sensores & Níveis';
-  }
-  if (
-    k.includes('light') ||
-    k.includes('lamp') ||
-    k.includes('pump') ||
-    k.includes('fan') ||
-    k.includes('valve') ||
-    k.includes('out_') ||
-    k.includes('sts_') ||
-    k.includes('btn') ||
-    k.includes('fbk_') ||
-    k.includes('icon_')
-  ) {
-    return 'Atuadores & Lâmpadas';
-  }
-  return 'Geral / Outros';
 }
 
 export function parseJsonLog(input: string, filename?: string): ParseResult {
@@ -122,33 +67,33 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
   let rawParsed: any;
   const trimmed = input.trim();
 
-  // 1. Try standard JSON.parse first
+  // Try standard JSON.parse first
   try {
     rawParsed = JSON.parse(trimmed);
   } catch {
-    // 2. Test if it's NDJSON (JSON Lines / .log file) where each line is an object:
-    // {"#": 0, "eng_dem_perc_torque": 0.0, ...}
+    // If standard JSON fails, test if it's NDJSON (JSON Lines / .log file) or comma-separated objects
     const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
     const parsedLines: any[] = [];
     let parsedCount = 0;
 
     for (const line of lines) {
-      const cleanLine = line.endsWith(',') ? line.slice(0, -1).trim() : line;
       try {
+        const cleanLine = line.endsWith(',') ? line.slice(0, -1).trim() : line;
         const item = JSON.parse(cleanLine);
         parsedLines.push(item);
         parsedCount++;
       } catch {
-        // Fallback: extract substring between first { and last }
-        const startBrace = cleanLine.indexOf('{');
-        const endBrace = cleanLine.lastIndexOf('}');
-        if (startBrace !== -1 && endBrace > startBrace) {
-          try {
-            const item = JSON.parse(cleanLine.substring(startBrace, endBrace + 1));
-            parsedLines.push(item);
-            parsedCount++;
-          } catch {
-            // Ignore corrupted line
+        // Try extracting JSON objects if multiple per line
+        const objMatches = line.match(/\{[^}]+\}/g);
+        if (objMatches) {
+          for (const m of objMatches) {
+            try {
+              const item = JSON.parse(m);
+              parsedLines.push(item);
+              parsedCount++;
+            } catch {
+              // skip
+            }
           }
         }
       }
@@ -157,9 +102,9 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
     if (parsedCount > 0) {
       rawParsed = parsedLines;
     } else {
-      // 3. Try wrapping comma-separated records in brackets
+      // Also test wrapping in [ ... ]
       try {
-        rawParsed = JSON.parse('[' + trimmed.replace(/,\s*$/, '') + ']');
+        rawParsed = JSON.parse(`[${trimmed}]`);
       } catch {
         throw new Error('Não foi possível interpretar o texto como JSON ou JSONL (JSON Lines). Verifique a sintaxe.');
       }
@@ -205,7 +150,7 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
     return flat;
   });
 
-  // Extract all unique field names across all sparse lines
+  // Extract all unique field names
   const allKeysSet = new Set<string>();
   records.forEach(rec => {
     Object.keys(rec).forEach(k => allKeysSet.add(k));
@@ -296,8 +241,6 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
       isNumeric,
       isDateCandidate,
       uniqueValuesCount: uniqueSet.size,
-      validCount: totalValid,
-      category: categorizeField(key),
       min,
       max,
       avg,
@@ -306,12 +249,8 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
     });
   });
 
-  // Sort fields: numeric and date candidates first, then by category and name
+  // Sort fields: numeric and date candidates first, then alphabetical
   fields.sort((a, b) => {
-    // If one is '#', it belongs at the very top
-    if (a.key === '#' && b.key !== '#') return -1;
-    if (a.key !== '#' && b.key === '#') return 1;
-
     if (a.isDateCandidate && !b.isDateCandidate) return -1;
     if (!a.isDateCandidate && b.isDateCandidate) return 1;
     if (a.isNumeric && !b.isNumeric) return -1;
@@ -320,78 +259,27 @@ export function parseJsonLog(input: string, filename?: string): ParseResult {
   });
 
   // Suggest best default X key:
-  // 1. Check for '#' or hash tick/frame first (primary key in CAN logs like Log_112)
+  // 1. Look for date/time fields
+  const dateCandidates = fields.filter(f => f.isDateCandidate);
   let detectedXKey = '_index';
-  const hashKeyField = fields.find(f => f.key === '#' || f.key.toLowerCase() === 'step' || f.key.toLowerCase() === 'tick');
-  if (hashKeyField) {
-    detectedXKey = hashKeyField.key;
+
+  if (dateCandidates.length > 0) {
+    const preferredNames = ['timestamp', 'time', 'datetime', 'date', 'created_at', 'ts', 'epoch'];
+    const matched = dateCandidates.find(f => preferredNames.includes(f.key.toLowerCase())) || dateCandidates[0];
+    detectedXKey = matched.key;
   } else {
-    const dateCandidates = fields.filter(f => f.isDateCandidate);
-    if (dateCandidates.length > 0) {
-      const preferredNames = ['timestamp', 'time', 'datetime', 'date', 'created_at', 'ts', 'epoch', 'step'];
-      const matched = dateCandidates.find(f => preferredNames.includes(f.key.toLowerCase())) || dateCandidates[0];
-      detectedXKey = matched.key;
-    } else {
-      // Look for id, step, seq, index
-      const indexField = fields.find(f => ['step', 'iteration', 'seq', 'index', 'id', 'record', 'frame'].includes(f.key.toLowerCase()));
-      if (indexField) {
-        detectedXKey = indexField.key;
-      }
+    // 2. Look for sequence / packet / sample / iteration id: #, seq, sequence, sample, frame, packet, step, index, id
+    const indexCandidates = ['#', 'seq', 'sequence', 'sample', 'frame', 'packet', 'step', 'iteration', 'index', 'id', 'record', 'nro'];
+    const matchedIndex = fields.find(f => indexCandidates.includes(f.key.toLowerCase()));
+    if (matchedIndex) {
+      detectedXKey = matchedIndex.key;
     }
   }
 
-  // Suggest default Y keys:
-  // Score numeric candidates prioritizing real telemetry signals (dynamic range > 0, multiple unique values, key vehicle names)
-  const highInterestPatterns = [
-    'engine_speed',
-    'wheelbasedvehiclespeed',
-    'fa_speed',
-    'fuel_level',
-    'turret_angle',
-    'inp_shaft_speed',
-    'out_shaft_speed',
-    'intake_manf_temp',
-    'speed',
-    'rpm',
-    'torque',
-    'temperatura',
-    'frequencia_cardiaca',
-    'cpu_percent',
-    'requisicoes_sec',
-    'pressao',
-    'vibracao',
-  ];
-
-  const candidateYFields = fields.filter(f => f.isNumeric && f.key !== detectedXKey);
-
-  candidateYFields.sort((a, b) => {
-    const aKey = a.key.toLowerCase();
-    const bKey = b.key.toLowerCase();
-
-    // Check if in high interest patterns
-    const aPatternIdx = highInterestPatterns.findIndex(p => aKey.includes(p));
-    const bPatternIdx = highInterestPatterns.findIndex(p => bKey.includes(p));
-
-    if (aPatternIdx !== -1 && bPatternIdx === -1) return -1;
-    if (aPatternIdx === -1 && bPatternIdx !== -1) return 1;
-    if (aPatternIdx !== -1 && bPatternIdx !== -1) {
-      if (aPatternIdx !== bPatternIdx) return aPatternIdx - bPatternIdx;
-    }
-
-    // Dynamic range score: prefer signals where min !== max
-    const aDynamic = (a.max ?? 0) - (a.min ?? 0) > 0 ? 1 : 0;
-    const bDynamic = (b.max ?? 0) - (b.min ?? 0) > 0 ? 1 : 0;
-    if (aDynamic !== bDynamic) return bDynamic - aDynamic;
-
-    // Prefer metrics with more unique values (avoid 0/1 constant flags)
-    if (a.uniqueValuesCount !== b.uniqueValuesCount) {
-      return b.uniqueValuesCount - a.uniqueValuesCount;
-    }
-
-    return (b.validCount ?? 0) - (a.validCount ?? 0);
-  });
-
-  const detectedYKeys = candidateYFields.slice(0, 3).map(f => f.key);
+  // Suggest default Y keys: top 2-3 numeric fields that are NOT the X key and NOT sequence numbers
+  const sequenceKeys = new Set(['#', '_index', 'id', 'index', 'seq', 'step', 'record', 'sample', 'packet', 'frame']);
+  const numericFields = fields.filter(f => f.isNumeric && f.key !== detectedXKey && !sequenceKeys.has(f.key.toLowerCase()));
+  const detectedYKeys = numericFields.slice(0, 3).map(f => f.key);
 
   const parseTimeMs = Math.round(performance.now() - startTime);
 

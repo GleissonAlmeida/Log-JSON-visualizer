@@ -210,6 +210,15 @@ O analisador aceita automaticamente diversas estruturas de arquivos de log:
 ```
 *(As propriedades são convertidas automaticamente em `sensores.temperatura` e `sensores.umidade`)*.
 
+### 4. JSON Lines & Telemetria Veicular CAN Bus (NDJSON Intercalado):
+```json
+{"#":1,"BrakeSwitch":1.0,"WheelBasedVehicleSpeed":0.00}
+{"#":2,"curr_gear":2.0,"sel_gear":2.0}
+{"#":3,"BrakeSwitch":1.0,"WheelBasedVehicleSpeed":0.00}
+{"#":4,"curr_gear":2.0,"sel_gear":2.0}
+```
+*(O campo `"#"` é detectado automaticamente como o índice sequencial de amostragem horizontal. O algoritmo unifica esquemas esparsos e aplica **Zero-Order Hold (Sample & Hold)** e `spanGaps`, mantendo curvas de velocidade, freio e marcha contínuas sem quedas a zero)*.
+
 ---
 
 ## 📜 Licença

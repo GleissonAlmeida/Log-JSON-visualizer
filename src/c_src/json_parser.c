@@ -224,12 +224,63 @@ static JsonNode* parse_value(const char **ptr) {
 
 JsonNode* json_parse(const char *text, const char **error_ptr) {
     if (!text) return NULL;
-    const char *p = text;
-    JsonNode *root = parse_value(&p);
-    if (!root && error_ptr) {
-        *error_ptr = p;
+    const char *p = skip_whitespace(text);
+    if (!*p) return NULL;
+
+    // If starts with '[', parse standard array
+    if (*p == '[') {
+        JsonNode *root = parse_value(&p);
+        if (!root && error_ptr) *error_ptr = p;
+        return root;
     }
-    return root;
+
+    // Parse the first JSON value
+    JsonNode *first = parse_value(&p);
+    if (!first) {
+        if (error_ptr) *error_ptr = p;
+        return NULL;
+    }
+
+    p = skip_whitespace(p);
+    // If end of string, it was a single object or value
+    if (*p == '\0') {
+        return first;
+    }
+
+    // Multi-object stream / NDJSON (JSON Lines)
+    JsonNode *array_node = (JsonNode*)calloc(1, sizeof(JsonNode));
+    if (!array_node) return first;
+    array_node->type = JSON_ARRAY;
+    size_t capacity = 128;
+    array_node->value.array_val.items = (JsonNode**)malloc(capacity * sizeof(JsonNode*));
+    array_node->value.array_val.count = 0;
+
+    array_node->value.array_val.items[array_node->value.array_val.count++] = first;
+
+    while (*p) {
+        p = skip_whitespace(p);
+        if (!*p) break;
+        if (*p == ',') {
+            p++;
+            p = skip_whitespace(p);
+        }
+        if (!*p) break;
+
+        JsonNode *item = parse_value(&p);
+        if (!item) {
+            // Skip invalid line
+            while (*p && *p != '\n' && *p != '\r') p++;
+            continue;
+        }
+
+        if (array_node->value.array_val.count >= capacity) {
+            capacity *= 2;
+            array_node->value.array_val.items = (JsonNode**)realloc(array_node->value.array_val.items, capacity * sizeof(JsonNode*));
+        }
+        array_node->value.array_val.items[array_node->value.array_val.count++] = item;
+    }
+
+    return array_node;
 }
 
 void json_free(JsonNode *node) {

@@ -12,7 +12,7 @@
 #include <math.h>
 #include "json_parser.h"
 
-#define MAX_METRICS 128
+#define MAX_METRICS 32
 #define MAX_LABEL_LEN 64
 
 typedef struct {
@@ -29,7 +29,6 @@ typedef struct {
 typedef struct {
     char x_label[MAX_LABEL_LEN];
     double values[MAX_METRICS];
-    char has_val[MAX_METRICS];
 } DataPoint;
 
 typedef struct {
@@ -81,38 +80,23 @@ static int compare_doubles(const void *a, const void *b) {
     return 0;
 }
 
-/* Calcula estatísticas para uma métrica (suporte a métricas esparsas CAN) */
+/* Calcula estatísticas para uma métrica */
 static void compute_metric_stats(Dataset *ds, int m_idx) {
     MetricStats *st = &ds->stats[m_idx];
     strncpy(st->name, ds->metric_names[m_idx], sizeof(st->name) - 1);
     st->name[sizeof(st->name) - 1] = '\0';
+    st->count = ds->num_points;
 
-    int valid_count = 0;
-    for (int i = 0; i < ds->num_points; i++) {
-        if (ds->points[i].has_val[m_idx]) valid_count++;
-    }
-    st->count = valid_count;
+    if (ds->num_points == 0) return;
 
-    if (valid_count == 0) {
-        st->min = 0.0;
-        st->max = 0.0;
-        st->sum = 0.0;
-        st->mean = 0.0;
-        st->median = 0.0;
-        st->stddev = 0.0;
-        return;
-    }
-
-    double *sorted = (double*)malloc(valid_count * sizeof(double));
+    double *sorted = (double*)malloc(ds->num_points * sizeof(double));
     double sum = 0.0;
-    double min_val = 1e30;
-    double max_val = -1e30;
-    int idx = 0;
+    double min_val = ds->points[0].values[m_idx];
+    double max_val = ds->points[0].values[m_idx];
 
     for (int i = 0; i < ds->num_points; i++) {
-        if (!ds->points[i].has_val[m_idx]) continue;
         double val = ds->points[i].values[m_idx];
-        sorted[idx++] = val;
+        sorted[i] = val;
         sum += val;
         if (val < min_val) min_val = val;
         if (val > max_val) max_val = val;
@@ -121,24 +105,24 @@ static void compute_metric_stats(Dataset *ds, int m_idx) {
     st->min = min_val;
     st->max = max_val;
     st->sum = sum;
-    st->mean = sum / valid_count;
+    st->mean = sum / ds->num_points;
 
     /* Mediana */
-    qsort(sorted, valid_count, sizeof(double), compare_doubles);
-    if (valid_count % 2 != 0) {
-        st->median = sorted[valid_count / 2];
+    qsort(sorted, ds->num_points, sizeof(double), compare_doubles);
+    if (ds->num_points % 2 != 0) {
+        st->median = sorted[ds->num_points / 2];
     } else {
-        int mid = valid_count / 2;
+        int mid = ds->num_points / 2;
         st->median = (sorted[mid - 1] + sorted[mid]) / 2.0;
     }
 
     /* Desvio Padrão */
     double var_sum = 0.0;
-    for (int i = 0; i < valid_count; i++) {
-        double diff = sorted[i] - st->mean;
+    for (int i = 0; i < ds->num_points; i++) {
+        double diff = ds->points[i].values[m_idx] - st->mean;
         var_sum += diff * diff;
     }
-    st->stddev = sqrt(var_sum / valid_count);
+    st->stddev = sqrt(var_sum / ds->num_points);
 
     free(sorted);
 }
@@ -354,11 +338,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     for (int i = 0; i < ds->num_points; i++) {
         fprintf(fp, "      { _idx: %d, x: \"%s\"", i + 1, ds->points[i].x_label);
         for (int m = 0; m < ds->num_metrics; m++) {
-            if (ds->points[i].has_val[m]) {
-                fprintf(fp, ", \"%s\": %.4f", ds->metric_names[m], ds->points[i].values[m]);
-            } else {
-                fprintf(fp, ", \"%s\": null", ds->metric_names[m]);
-            }
+            fprintf(fp, ", \"%s\": %.4f", ds->metric_names[m], ds->points[i].values[m]);
         }
         fprintf(fp, " }%s\n", (i < ds->num_points - 1) ? "," : "");
     }
@@ -392,13 +372,13 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      const maxYVal = isManual && document.getElementById('inpMaxY').value !== '' ? parseFloat(document.getElementById('inpMaxY').value) : undefined;\n");
     fprintf(fp, "      const minY1Val = isManual && document.getElementById('inpMinY1').value !== '' ? parseFloat(document.getElementById('inpMinY1').value) : undefined;\n");
     fprintf(fp, "      const maxY1Val = isManual && document.getElementById('inpMaxY1').value !== '' ? parseFloat(document.getElementById('inpMaxY1').value) : undefined;\n");
-    fprintf(fp, "      document.getElementById('dispXKey').innerText = xKey === '#' ? 'Passo / Frame CAN (#)' : (xKey === '_index' ? 'Índice sequencial' : xKey);\n\n");
+    fprintf(fp, "      document.getElementById('dispXKey').innerText = xKey === '_index' ? 'Índice sequencial' : xKey;\n\n");
 
     fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
     fprintf(fp, "      document.getElementById('dispInfo').innerText = `Mostrando ${filtered.length} de ${rawData.length} registros (Ptos ${rangeStart + 1}-${rangeEnd + 1})`;\n");
     fprintf(fp, "      document.getElementById('lblRange').innerText = `Ponto ${rangeStart + 1} até ${rangeEnd + 1} (Total: ${filtered.length} pontos)`;\n\n");
 
-    fprintf(fp, "      const labels = filtered.map(r => xKey === '_index' ? `#${r._idx}` : (xKey === '#' ? `#${r.x}` : r.x));\n");
+    fprintf(fp, "      const labels = filtered.map(r => xKey === '_index' ? `#${r._idx}` : r.x);\n");
     fprintf(fp, "      let selectedCount = 0;\n");
     fprintf(fp, "      let hasRightAxis = false;\n\n");
 
@@ -421,10 +401,11 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            stepped: isStepped ? 'before' : false,\n");
     fprintf(fp, "            pointRadius: showPoints ? 3.5 : 0,\n");
     fprintf(fp, "            pointHoverRadius: 6,\n");
-    fprintf(fp, "            pointBackgroundColor: cfg.color,\n");
+    fprintf(fp, "            pointBorderColor: '#ffffff',\n");
+    fprintf(fp, "            pointBorderWidth: 1.5,\n");
     fprintf(fp, "            fill: isArea,\n");
-    fprintf(fp, "            yAxisID: axis,\n");
-    fprintf(fp, "            spanGaps: true\n");
+    fprintf(fp, "            spanGaps: true,\n");
+    fprintf(fp, "            yAxisID: axis\n");
     fprintf(fp, "          });\n");
     fprintf(fp, "        }\n");
     fprintf(fp, "      }\n");
@@ -466,9 +447,24 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      });\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
+    fprintf(fp, "    function sortMetricsList() {\n");
+    fprintf(fp, "      const list = document.getElementById('metricList');\n");
+    fprintf(fp, "      if (!list) return;\n");
+    fprintf(fp, "      const items = Array.from(list.children);\n");
+    fprintf(fp, "      items.sort((a, b) => {\n");
+    fprintf(fp, "        const aKey = a.getAttribute('data-key') || '';\n");
+    fprintf(fp, "        const bKey = b.getAttribute('data-key') || '';\n");
+    fprintf(fp, "        const aSel = document.getElementById('chk_' + aKey)?.checked ? 1 : 0;\n");
+    fprintf(fp, "        const bSel = document.getElementById('chk_' + bKey)?.checked ? 1 : 0;\n");
+    fprintf(fp, "        if (aSel !== bSel) return bSel - aSel;\n");
+    fprintf(fp, "        return aKey.localeCompare(bKey, undefined, { numeric: true });\n");
+    fprintf(fp, "      });\n");
+    fprintf(fp, "      items.forEach(el => list.appendChild(el));\n");
+    fprintf(fp, "    }\n\n");
     fprintf(fp, "    function toggleMetric(key) {\n");
     fprintf(fp, "      const chk = document.getElementById('chk_' + key);\n");
     fprintf(fp, "      document.getElementById('item_' + key).classList.toggle('selected', chk.checked);\n");
+    fprintf(fp, "      sortMetricsList();\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
 
@@ -493,9 +489,9 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "        const itm = document.getElementById('item_' + k);\n");
     fprintf(fp, "        if (itm) itm.classList.add('selected');\n");
     fprintf(fp, "      }\n");
+    fprintf(fp, "      sortMetricsList();\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
-
     fprintf(fp, "    function clearMetrics() {\n");
     fprintf(fp, "      for (const k in metricMeta) {\n");
     fprintf(fp, "        const chk = document.getElementById('chk_' + k);\n");
@@ -503,6 +499,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "        const itm = document.getElementById('item_' + k);\n");
     fprintf(fp, "        if (itm) itm.classList.remove('selected');\n");
     fprintf(fp, "      }\n");
+    fprintf(fp, "      sortMetricsList();\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
 
@@ -577,17 +574,29 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      const reader = new FileReader();\n");
     fprintf(fp, "      reader.onload = function(e) {\n");
     fprintf(fp, "        try {\n");
-    fprintf(fp, "          const parsed = JSON.parse(e.target.result);\n");
-    fprintf(fp, "          const arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.logs || [parsed]);\n");
-    fprintf(fp, "          if (!arr.length) return alert('JSON vazio');\n");
-    fprintf(fp, "          const sample = arr[0];\n");
-    fprintf(fp, "          const keys = Object.keys(sample);\n");
-    fprintf(fp, "          let newX = keys.find(k => k.includes('time') || k.includes('date') || k === 'id') || keys[0];\n");
-    fprintf(fp, "          const numKeys = keys.filter(k => k !== newX && typeof sample[k] === 'number');\n");
+    fprintf(fp, "          let arr;\n");
+    fprintf(fp, "          try {\n");
+    fprintf(fp, "            const parsed = JSON.parse(e.target.result);\n");
+    fprintf(fp, "            arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.logs || [parsed]);\n");
+    fprintf(fp, "          } catch(err) {\n");
+    fprintf(fp, "            const lines = e.target.result.trim().split(/\\r?\\n/).filter(l => l.trim().length > 0);\n");
+    fprintf(fp, "            arr = lines.map(l => JSON.parse(l.replace(/,$/, '')));\n");
+    fprintf(fp, "          }\n");
+    fprintf(fp, "          if (!arr || !arr.length) return alert('JSON vazio');\n");
+    fprintf(fp, "          const allKeys = new Set();\n");
+    fprintf(fp, "          arr.forEach(r => Object.keys(r).forEach(k => allKeys.add(k)));\n");
+    fprintf(fp, "          let newX = Array.from(allKeys).find(k => k === '#' || k.includes('time') || k.includes('date') || k === 'id') || '_index';\n");
+    fprintf(fp, "          const numKeys = Array.from(allKeys).filter(k => k !== newX && k !== '#' && k !== '_index');\n");
     fprintf(fp, "          rawData.length = 0;\n");
+    fprintf(fp, "          const lastKnown = {};\n");
     fprintf(fp, "          for (let i = 0; i < arr.length; i++) {\n");
-    fprintf(fp, "            const row = { _idx: i + 1, x: String(arr[i][newX] ?? i + 1) };\n");
-    fprintf(fp, "            numKeys.forEach(k => row[k] = Number(arr[i][k]) || 0);\n");
+    fprintf(fp, "            const row = { _idx: i + 1, x: String(arr[i][newX] !== undefined ? arr[i][newX] : (newX === '#' ? '#' + (i + 1) : i + 1)) };\n");
+    fprintf(fp, "            numKeys.forEach(k => {\n");
+    fprintf(fp, "              if (arr[i][k] !== undefined && arr[i][k] !== null && !isNaN(Number(arr[i][k]))) {\n");
+    fprintf(fp, "                lastKnown[k] = Number(arr[i][k]);\n");
+    fprintf(fp, "              }\n");
+    fprintf(fp, "              row[k] = lastKnown[k] !== undefined ? lastKnown[k] : 0;\n");
+    fprintf(fp, "            });\n");
     fprintf(fp, "            rawData.push(row);\n");
     fprintf(fp, "          }\n");
     fprintf(fp, "          for (const k in metricMeta) delete metricMeta[k];\n");
@@ -606,12 +615,13 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          document.getElementById('lblFileRecords').innerText = `${arr.length} registros`;\n");
     fprintf(fp, "          const selX = document.getElementById('selectX');\n");
     fprintf(fp, "          selX.innerHTML = `<option value=\"${newX}\" selected>${newX}</option><option value=\"_index\"># Índice Sequencial</option>`;\n");
+    fprintf(fp, "          sortMetricsList();\n");
     fprintf(fp, "          resetRange();\n");
     fprintf(fp, "        } catch(err) { alert('Erro ao processar JSON: ' + err.message); }\n");
     fprintf(fp, "      };\n");
     fprintf(fp, "      reader.readAsText(file);\n");
     fprintf(fp, "    }\n\n");
-    fprintf(fp, "    window.onload = function() { updateChart(); };\n");
+    fprintf(fp, "    window.onload = function() { sortMetricsList(); updateChart(); };\n");
     fprintf(fp, "  </script>\n</body>\n</html>\n");
 
     fclose(fp);
@@ -619,84 +629,19 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     return 1;
 }
 
-/* Analisador flexível: processa JSON Array convencional, Objeto envelopado ou NDJSON (JSON Lines) */
-static JsonNode* parse_json_or_ndjson(const char *text) {
-    if (!text) return NULL;
-    const char *p = text;
-    while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')) p++;
-    if (!*p) return NULL;
-
-    /* 1. Se começar com '[', é um JSON array normal */
-    if (*p == '[') {
-        const char *err = NULL;
-        return json_parse(p, &err);
-    }
-
-    /* 2. Verifica se é NDJSON (múltiplos objetos por linha, ex: Log_112...json) */
-    JsonNode *ndjson_arr = (JsonNode*)calloc(1, sizeof(JsonNode));
-    if (!ndjson_arr) return NULL;
-    ndjson_arr->type = JSON_ARRAY;
-    size_t cap = 64;
-    ndjson_arr->value.array_val.items = (JsonNode**)malloc(cap * sizeof(JsonNode*));
-    ndjson_arr->value.array_val.count = 0;
-
-    const char *cur = text;
-    while (*cur) {
-        while (*cur && (*cur == ' ' || *cur == '\t' || *cur == '\n' || *cur == '\r' || *cur == ',')) cur++;
-        if (!*cur) break;
-        if (*cur != '{') { cur++; continue; }
-
-        const char *line_start = cur;
-        const char *err = NULL;
-        JsonNode *node = json_parse(line_start, &err);
-        if (node) {
-            if (ndjson_arr->value.array_val.count >= cap) {
-                cap *= 2;
-                ndjson_arr->value.array_val.items = (JsonNode**)realloc(
-                    ndjson_arr->value.array_val.items, cap * sizeof(JsonNode*));
-            }
-            ndjson_arr->value.array_val.items[ndjson_arr->value.array_val.count++] = node;
-
-            /* Pula o corpo do objeto analisado */
-            int depth = 0;
-            int in_str = 0;
-            while (*cur) {
-                if (*cur == '\"' && (cur == text || *(cur-1) != '\\')) in_str = !in_str;
-                else if (!in_str) {
-                    if (*cur == '{') depth++;
-                    else if (*cur == '}') {
-                        depth--;
-                        if (depth <= 0) { cur++; break; }
-                    }
-                }
-                cur++;
-            }
-        } else {
-            while (*cur && *cur != '\n') cur++;
-            if (*cur == '\n') cur++;
-        }
-    }
-
-    if (ndjson_arr->value.array_val.count > 0) {
-        return ndjson_arr;
-    }
-
-    json_free(ndjson_arr);
-    const char *err = NULL;
-    return json_parse(text, &err);
-}
-
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     const char *input_filename = "sample_iot.json";
-    const char *html_output = "grafico_interativo.html";
     const char *x_key_param = NULL;
     char requested_metrics[MAX_METRICS][MAX_LABEL_LEN];
     int num_requested_metrics = 0;
+    const char *html_output = "grafico_c.html";
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-x") == 0 && i + 1 < argc) {
+        if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) {
+            input_filename = argv[++i];
+        } else if (strcmp(argv[i], "-x") == 0 && i + 1 < argc) {
             x_key_param = argv[++i];
-        } else if (strcmp(argv[i], "-y") == 0 && i + 1 < argc) {
+        } else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc) {
             char *token = strtok(argv[++i], ",");
             while (token && num_requested_metrics < MAX_METRICS) {
                 strncpy(requested_metrics[num_requested_metrics++], token, MAX_LABEL_LEN - 1);
@@ -718,9 +663,10 @@ int main(int argc, char *argv[]) {
     char *json_content = read_entire_file(input_filename, &file_size);
     if (!json_content) return 1;
 
-    JsonNode *root = parse_json_or_ndjson(json_content);
+    const char *error_ptr = NULL;
+    JsonNode *root = json_parse(json_content, &error_ptr);
     if (!root) {
-        fprintf(stderr, "[ERRO] Falha ao analisar o arquivo JSON/NDJSON.\n");
+        fprintf(stderr, "[ERRO] Falha ao analisar JSON proximo a: %.40s\n", error_ptr ? error_ptr : "");
         free(json_content);
         return 1;
     }
@@ -735,7 +681,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!array_node || array_node->type != JSON_ARRAY) {
-        fprintf(stderr, "[ERRO] O JSON deve conter um array ou linhas de registros.\n");
+        fprintf(stderr, "[ERRO] O JSON deve conter um array de registros.\n");
         json_free(root);
         free(json_content);
         return 1;
@@ -752,68 +698,61 @@ int main(int argc, char *argv[]) {
     Dataset ds;
     memset(&ds, 0, sizeof(Dataset));
     ds.num_points = (int)total_records;
-    ds.points = (DataPoint*)calloc(ds.num_points, sizeof(DataPoint));
+    ds.points = (DataPoint*)malloc(ds.num_points * sizeof(DataPoint));
 
-    /* 1. Detecta Eixo X varrendo os registros (prioriza '#' para logs CAN) */
     if (!x_key_param) {
-        int has_hash = 0;
-        for (size_t i = 0; i < total_records && i < 30; i++) {
-            JsonNode *rec = json_array_get(array_node, i);
-            if (rec && json_object_get(rec, "#")) {
-                has_hash = 1;
-                break;
-            }
-        }
-        if (has_hash) {
-            strncpy(ds.x_key, "#", sizeof(ds.x_key) - 1);
-        } else {
-            const char *candidates[] = { "timestamp", "horario", "time", "date", "minuto", "tempo", "step", "id" };
-            for (size_t c = 0; c < sizeof(candidates)/sizeof(candidates[0]); c++) {
-                int found = 0;
-                for (size_t i = 0; i < total_records && i < 30; i++) {
-                    JsonNode *rec = json_array_get(array_node, i);
-                    if (rec && json_object_get(rec, candidates[c])) {
-                        found = 1;
-                        break;
-                    }
-                }
-                if (found) {
+        const char *candidates[] = { "#", "timestamp", "horario", "time", "date", "minuto", "tempo", "step", "seq", "id" };
+        for (size_t c = 0; c < sizeof(candidates)/sizeof(candidates[0]); c++) {
+            for (size_t r = 0; r < total_records && r < 100; r++) {
+                JsonNode *rec = json_array_get(array_node, r);
+                if (rec && json_object_get(rec, candidates[c])) {
                     strncpy(ds.x_key, candidates[c], sizeof(ds.x_key) - 1);
                     break;
                 }
             }
-            if (strlen(ds.x_key) == 0) strncpy(ds.x_key, "_index", sizeof(ds.x_key) - 1);
+            if (strlen(ds.x_key) > 0) break;
         }
+        if (strlen(ds.x_key) == 0) strncpy(ds.x_key, "_index", sizeof(ds.x_key) - 1);
     } else {
         strncpy(ds.x_key, x_key_param, sizeof(ds.x_key) - 1);
     }
 
-    /* 2. Detecta todas as métricas numéricas varrendo todos os registros (suporte a telemetria multiplexada esparsa) */
     if (num_requested_metrics == 0) {
-        for (size_t i = 0; i < total_records && ds.num_metrics < MAX_METRICS; i++) {
-            JsonNode *rec = json_array_get(array_node, i);
+        for (size_t r = 0; r < total_records && ds.num_metrics < MAX_METRICS; r++) {
+            JsonNode *rec = json_array_get(array_node, r);
             if (!rec || rec->type != JSON_OBJECT) continue;
             for (size_t f = 0; f < rec->value.obj_val.count && ds.num_metrics < MAX_METRICS; f++) {
                 JsonNode *field = rec->value.obj_val.fields[f];
-                if ((field->type == JSON_NUMBER || field->type == JSON_STRING) && strcmp(field->key, ds.x_key) != 0) {
-                    int already = 0;
+                if (field->type == JSON_NUMBER && strcmp(field->key, ds.x_key) != 0 && strcmp(field->key, "#") != 0) {
+                    int exists = 0;
                     for (int m = 0; m < ds.num_metrics; m++) {
                         if (strcmp(ds.metric_names[m], field->key) == 0) {
-                            already = 1;
+                            exists = 1;
                             break;
                         }
                     }
-                    if (!already) {
+                    if (!exists && ds.num_metrics < MAX_METRICS) {
                         strncpy(ds.metric_names[ds.num_metrics++], field->key, MAX_LABEL_LEN - 1);
                     }
                 }
             }
         }
     } else {
-        for (int m = 0; m < num_requested_metrics && m < MAX_METRICS; m++) {
+        for (int m = 0; m < num_requested_metrics; m++) {
             strncpy(ds.metric_names[m], requested_metrics[m], MAX_LABEL_LEN - 1);
         }
         ds.num_metrics = num_requested_metrics;
+    }
+    // Ordena nomes das metricas em ordem alfabetica
+    for (int i = 0; i < ds.num_metrics - 1; i++) {
+        for (int j = i + 1; j < ds.num_metrics; j++) {
+            if (strcmp(ds.metric_names[i], ds.metric_names[j]) > 0) {
+                char tmp[MAX_LABEL_LEN];
+                strcpy(tmp, ds.metric_names[i]);
+                strcpy(ds.metric_names[i], ds.metric_names[j]);
+                strcpy(ds.metric_names[j], tmp);
+            }
+        }
     }
 
     printf("[INFO] Eixo X: '%s'\n", ds.x_key);
@@ -832,8 +771,8 @@ int main(int argc, char *argv[]) {
                 if (x_node->type == JSON_STRING) {
                     strncpy(dp->x_label, x_node->value.str_val, sizeof(dp->x_label) - 1);
                 } else if (x_node->type == JSON_NUMBER) {
-                    if (strcmp(ds.x_key, "#") == 0) {
-                        snprintf(dp->x_label, sizeof(dp->x_label), "%.0f", x_node->value.num_val);
+                    if (floor(x_node->value.num_val) == x_node->value.num_val) {
+                        snprintf(dp->x_label, sizeof(dp->x_label), "#%.0f", x_node->value.num_val);
                     } else {
                         snprintf(dp->x_label, sizeof(dp->x_label), "%.2f", x_node->value.num_val);
                     }
@@ -845,12 +784,32 @@ int main(int argc, char *argv[]) {
 
         for (int m = 0; m < ds.num_metrics; m++) {
             JsonNode *val_node = json_object_get(rec, ds.metric_names[m]);
-            if (val_node && (val_node->type == JSON_NUMBER || val_node->type == JSON_STRING)) {
+            if (val_node) {
                 dp->values[m] = json_get_number(val_node, 0.0);
-                dp->has_val[m] = 1;
             } else {
-                dp->values[m] = 0.0;
-                dp->has_val[m] = 0;
+                // Forward fill: maintain last known reading from previous point
+                dp->values[m] = (i > 0) ? ds.points[i - 1].values[m] : 0.0;
+            }
+        }
+    }
+
+    // Backfill any metric that first appears after index 0
+    for (int m = 0; m < ds.num_metrics; m++) {
+        double first_valid = 0.0;
+        int found = 0;
+        for (size_t i = 0; i < total_records; i++) {
+            JsonNode *rec = json_array_get(array_node, i);
+            if (rec && json_object_get(rec, ds.metric_names[m])) {
+                first_valid = ds.points[i].values[m];
+                found = 1;
+                break;
+            }
+        }
+        if (found) {
+            for (size_t i = 0; i < total_records; i++) {
+                JsonNode *rec = json_array_get(array_node, i);
+                if (rec && json_object_get(rec, ds.metric_names[m])) break;
+                ds.points[i].values[m] = first_valid;
             }
         }
     }
