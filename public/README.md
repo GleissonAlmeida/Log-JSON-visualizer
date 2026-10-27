@@ -23,7 +23,7 @@
 
 ## 🎯 Visão Geral
 
-O **LogPlotter C** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, métricas de servidores web e registros de performance armazenados em formato **JSON** ou **JSONL (JSON Lines)**.
+O **LogPlotter C** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, telemetria veicular CAN Bus e métricas de sistemas armazenados em formato **CSV (delimitado por vírgula `,`, ponto-e-vírgula `;` ou tabulação `\t`)**, bem como **JSON** ou **JSONL (JSON Lines)**.
 
 O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos e autônomos.
 
@@ -32,9 +32,10 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 ## ✨ Recursos Principais
 
 ### 📥 Ingestão e Leitura de Dados
-- **Upload Direto no App**: suporte a arquivos `.json`, `.log`, `.ndjson` e `.txt`.
+- **Suporte Completo a CSV (.csv)**: auto-detecção de delimitadores (`,`, `;`, `\t`, `|`) e conversão automática de números com vírgula decimal brasileira/europeia (ex: `12,50`).
+- **Upload Direto no App**: suporte a arquivos `.csv`, `.json`, `.log`, `.ndjson` e `.txt`.
 - **Desaninhamento Automático (*Object Flattening*)**: converte nós aninhados como `{"sensores": {"temperatura": 24.5}}` em chaves acessíveis `sensores.temperatura`.
-- **Detecção Inteligente**: identifica automaticamente campos temporais (`timestamp`, `horario`, `data`, `time`) e variáveis numéricas para plotagem.
+- **Detecção Inteligente**: identifica automaticamente campos temporais (`timestamp`, `horario`, `data`, `time`, `#`) e variáveis numéricas para plotagem.
 
 ### 📈 Gráficos Interativos (Chart.js)
 - **Cursor de Inspeção do Eixo X**:

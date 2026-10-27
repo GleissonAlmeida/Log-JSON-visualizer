@@ -181,15 +181,15 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     /* ================= PAINEL LATERAL ESQUERDO ================= */
     fprintf(fp, "    <div class=\"panel\">\n");
 
-    /* 0. Carregar Arquivo JSON */
+    /* 0. Carregar Arquivo JSON ou CSV */
     fprintf(fp, "      <div style=\"background: #070d19; border: 1px solid #1e293b; border-radius: 8px; padding: 12px;\">\n");
     fprintf(fp, "        <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;\">\n");
-    fprintf(fp, "          <span class=\"title-sec\" style=\"margin-bottom: 0;\">ARQUIVO DE LOG JSON</span>\n");
+    fprintf(fp, "          <span class=\"title-sec\" style=\"margin-bottom: 0;\">ARQUIVO DE LOG (JSON / CSV)</span>\n");
     fprintf(fp, "          <span id=\"lblFileRecords\" style=\"font-size: 10px; color: #818cf8; font-family: 'JetBrains Mono';\">%d registros</span>\n", ds->num_points);
     fprintf(fp, "        </div>\n");
     fprintf(fp, "        <label style=\"display: flex; align-items: center; justify-content: center; gap: 8px; background: #4f46e5; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; transition: background 0.15s;\">\n");
-    fprintf(fp, "          <span>&#128194; Carregar Novo Log JSON</span>\n");
-    fprintf(fp, "          <input type=\"file\" id=\"fileJsonUpload\" accept=\".json,.log,.txt\" style=\"display: none;\" onchange=\"loadNewJsonFile(event)\">\n");
+    fprintf(fp, "          <span>&#128194; Carregar Novo Log (JSON / CSV)</span>\n");
+    fprintf(fp, "          <input type=\"file\" id=\"fileJsonUpload\" accept=\".json,.log,.txt,.csv\" style=\"display: none;\" onchange=\"loadNewJsonFile(event)\">\n");
     fprintf(fp, "        </label>\n");
     fprintf(fp, "      </div>\n");
 
@@ -898,6 +898,28 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      else document.exitFullscreen();\n");
     fprintf(fp, "    }\n");
 
+    fprintf(fp, "    function parseCsvString(txt) {\n");
+    fprintf(fp, "      const lines = txt.trim().split(/\\r?\\n/).filter(l => l.trim().length > 0);\n");
+    fprintf(fp, "      if (!lines.length) return [];\n");
+    fprintf(fp, "      let delim = ',';\n");
+    fprintf(fp, "      if (lines[0].includes(';') && lines[0].split(';').length > lines[0].split(',').length) delim = ';';\n");
+    fprintf(fp, "      else if (lines[0].includes('\\t')) delim = '\\t';\n");
+    fprintf(fp, "      const headers = lines[0].split(delim).map(h => h.trim().replace(/^\"|\"$/g, ''));\n");
+    fprintf(fp, "      const res = [];\n");
+    fprintf(fp, "      for (let i = 1; i < lines.length; i++) {\n");
+    fprintf(fp, "        const parts = lines[i].split(delim).map(p => p.trim().replace(/^\"|\"$/g, ''));\n");
+    fprintf(fp, "        if (parts.length === 1 && !parts[0]) continue;\n");
+    fprintf(fp, "        const obj = {};\n");
+    fprintf(fp, "        headers.forEach((h, idx) => {\n");
+    fprintf(fp, "          let v = parts[idx] !== undefined ? parts[idx] : '';\n");
+    fprintf(fp, "          if (delim === ';' && /^-?\\d+,\\d+$/.test(v)) v = v.replace(',', '.');\n");
+    fprintf(fp, "          obj[h] = (v !== '' && !isNaN(Number(v))) ? Number(v) : v;\n");
+    fprintf(fp, "        });\n");
+    fprintf(fp, "        res.push(obj);\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "      return res;\n");
+    fprintf(fp, "    }\n\n");
+
     fprintf(fp, "    function loadNewJsonFile(evt) {\n");
     fprintf(fp, "      const file = evt.target.files[0];\n");
     fprintf(fp, "      if (!file) return;\n");
@@ -905,14 +927,23 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      reader.onload = function(e) {\n");
     fprintf(fp, "        try {\n");
     fprintf(fp, "          let arr;\n");
-    fprintf(fp, "          try {\n");
-    fprintf(fp, "            const parsed = JSON.parse(e.target.result);\n");
-    fprintf(fp, "            arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.logs || [parsed]);\n");
-    fprintf(fp, "          } catch(err) {\n");
-    fprintf(fp, "            const lines = e.target.result.trim().split(/\\r?\\n/).filter(l => l.trim().length > 0);\n");
-    fprintf(fp, "            arr = lines.map(l => JSON.parse(l.replace(/,$/, '')));\n");
+    fprintf(fp, "          const isCsv = file.name.toLowerCase().endsWith('.csv');\n");
+    fprintf(fp, "          if (isCsv) {\n");
+    fprintf(fp, "            arr = parseCsvString(e.target.result);\n");
+    fprintf(fp, "          } else {\n");
+    fprintf(fp, "            try {\n");
+    fprintf(fp, "              const parsed = JSON.parse(e.target.result);\n");
+    fprintf(fp, "              arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.logs || [parsed]);\n");
+    fprintf(fp, "            } catch(err) {\n");
+    fprintf(fp, "              try {\n");
+    fprintf(fp, "                const lines = e.target.result.trim().split(/\\r?\\n/).filter(l => l.trim().length > 0);\n");
+    fprintf(fp, "                arr = lines.map(l => JSON.parse(l.replace(/,$/, '')));\n");
+    fprintf(fp, "              } catch(err2) {\n");
+    fprintf(fp, "                arr = parseCsvString(e.target.result);\n");
+    fprintf(fp, "              }\n");
+    fprintf(fp, "            }\n");
     fprintf(fp, "          }\n");
-    fprintf(fp, "          if (!arr || !arr.length) return alert('JSON vazio');\n");
+    fprintf(fp, "          if (!arr || !arr.length) return alert('Arquivo vazio ou não reconhecido como JSON/CSV');\n");
     fprintf(fp, "          const allKeys = new Set();\n");
     fprintf(fp, "          arr.forEach(r => Object.keys(r).forEach(k => allKeys.add(k)));\n");
     fprintf(fp, "          let newX = Array.from(allKeys).find(k => k === '#' || k.includes('time') || k.includes('date') || k === 'id') || '_index';\n");
@@ -948,7 +979,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          selX.innerHTML = `<option value=\"${newX}\" selected>${newX}</option><option value=\"_index\"># Índice Sequencial</option>`;\n");
     fprintf(fp, "          sortMetricsList();\n");
     fprintf(fp, "          resetRange();\n");
-    fprintf(fp, "        } catch(err) { alert('Erro ao processar JSON: ' + err.message); }\n");
+    fprintf(fp, "        } catch(err) { alert('Erro ao processar arquivo: ' + err.message); }\n");
     fprintf(fp, "      };\n");
     fprintf(fp, "      reader.readAsText(file);\n");
     fprintf(fp, "    }\n\n");
@@ -957,6 +988,216 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     fclose(fp);
     printf("[SUCESSO] Grafico interativo gerado em C: '%s'\n", output_file);
+    return 1;
+}
+
+/* Comparador de strings insensível a maiúsculas/minúsculas portátil C99 */
+static int ci_streq(const char *a, const char *b) {
+    while (*a && *b) {
+        char ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;
+        char cb = (*b >= 'A' && *b <= 'Z') ? *b + 32 : *b;
+        if (ca != cb) return 0;
+        a++;
+        b++;
+    }
+    return (*a == '\0' && *b == '\0');
+}
+
+/* Parser de CSV robusto e portavel em ANSI C99 */
+static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_param, int num_requested_metrics, char requested_metrics[][MAX_LABEL_LEN]) {
+    if (!content || !ds) return 0;
+
+    // Detect delimiter from first non-empty line
+    char delim = ',';
+    const char *first_nl = strchr(content, '\n');
+    if (first_nl) {
+        int commas = 0, semis = 0, tabs = 0;
+        for (const char *p = content; p < first_nl; p++) {
+            if (*p == ',') commas++;
+            else if (*p == ';') semis++;
+            else if (*p == '\t') tabs++;
+        }
+        if (semis > commas && semis > tabs) delim = ';';
+        else if (tabs > commas && tabs > semis) delim = '\t';
+    }
+
+    char *copy = (char*)malloc(strlen(content) + 1);
+    if (!copy) return 0;
+    strcpy(copy, content);
+
+    // Split headers from first line
+    char *p = copy;
+    char *eol = strpbrk(p, "\r\n");
+    if (!eol) { free(copy); return 0; }
+    *eol = '\0';
+    char *next_line = eol + 1;
+    while (*next_line == '\r' || *next_line == '\n') next_line++;
+
+    char headers[MAX_METRICS + 8][MAX_LABEL_LEN];
+    int num_cols = 0;
+    char *tok = p;
+    while (tok && num_cols < MAX_METRICS + 8) {
+        char *sep = strchr(tok, delim);
+        if (sep) *sep = '\0';
+        while (*tok == ' ' || *tok == '\t' || *tok == '"') tok++;
+        size_t len = strlen(tok);
+        while (len > 0 && (tok[len - 1] == ' ' || tok[len - 1] == '\t' || tok[len - 1] == '"' || tok[len - 1] == '\r')) {
+            tok[len - 1] = '\0';
+            len--;
+        }
+        if (len > 0) {
+            strncpy(headers[num_cols], tok, MAX_LABEL_LEN - 1);
+            headers[num_cols][MAX_LABEL_LEN - 1] = '\0';
+        } else {
+            snprintf(headers[num_cols], MAX_LABEL_LEN, "col_%d", num_cols + 1);
+        }
+        num_cols++;
+        tok = sep ? (sep + 1) : NULL;
+    }
+
+    if (num_cols == 0) { free(copy); return 0; }
+
+    int capacity = 2048;
+    ds->points = (DataPoint*)malloc(capacity * sizeof(DataPoint));
+    if (!ds->points) { free(copy); return 0; }
+    ds->num_points = 0;
+
+    int x_col_idx = -1;
+    if (x_key_param && strlen(x_key_param) > 0) {
+        for (int c = 0; c < num_cols; c++) {
+            if (strcmp(headers[c], x_key_param) == 0) {
+                x_col_idx = c;
+                strncpy(ds->x_key, headers[c], sizeof(ds->x_key) - 1);
+                break;
+            }
+        }
+    }
+
+    if (x_col_idx < 0) {
+        const char *candidates[] = { "#", "timestamp", "horario", "time", "date", "minuto", "tempo", "step", "seq", "id" };
+        for (size_t cd = 0; cd < sizeof(candidates)/sizeof(candidates[0]); cd++) {
+            for (int c = 0; c < num_cols; c++) {
+                if (ci_streq(headers[c], candidates[cd])) {
+                    x_col_idx = c;
+                    strncpy(ds->x_key, headers[c], sizeof(ds->x_key) - 1);
+                    break;
+                }
+            }
+            if (x_col_idx >= 0) break;
+        }
+        if (x_col_idx < 0) {
+            strncpy(ds->x_key, "_index", sizeof(ds->x_key) - 1);
+        }
+    }
+
+    int metric_col_indices[MAX_METRICS];
+    ds->num_metrics = 0;
+
+    if (num_requested_metrics == 0) {
+        for (int c = 0; c < num_cols && ds->num_metrics < MAX_METRICS; c++) {
+            if (c == x_col_idx) continue;
+            if (strcmp(headers[c], "#") == 0 || strcmp(headers[c], "_index") == 0) continue;
+            metric_col_indices[ds->num_metrics] = c;
+            strncpy(ds->metric_names[ds->num_metrics], headers[c], MAX_LABEL_LEN - 1);
+            ds->num_metrics++;
+        }
+    } else {
+        for (int m = 0; m < num_requested_metrics && ds->num_metrics < MAX_METRICS; m++) {
+            for (int c = 0; c < num_cols; c++) {
+                if (strcmp(headers[c], requested_metrics[m]) == 0) {
+                    metric_col_indices[ds->num_metrics] = c;
+                    strncpy(ds->metric_names[ds->num_metrics], headers[c], MAX_LABEL_LEN - 1);
+                    ds->num_metrics++;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Parse each data row
+    p = next_line;
+    while (p && *p) {
+        eol = strpbrk(p, "\r\n");
+        if (eol) {
+            *eol = '\0';
+            next_line = eol + 1;
+            while (*next_line == '\r' || *next_line == '\n') next_line++;
+        } else {
+            next_line = NULL;
+        }
+
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') {
+            p = next_line;
+            continue;
+        }
+
+        if (ds->num_points >= capacity) {
+            capacity *= 2;
+            DataPoint *new_buf = (DataPoint*)realloc(ds->points, capacity * sizeof(DataPoint));
+            if (!new_buf) break;
+            ds->points = new_buf;
+        }
+
+        DataPoint *dp = &ds->points[ds->num_points];
+        for (int m = 0; m < ds->num_metrics; m++) {
+            dp->values[m] = (ds->num_points > 0) ? ds->points[ds->num_points - 1].values[m] : 0.0;
+        }
+        snprintf(dp->x_label, sizeof(dp->x_label), "#%d", ds->num_points + 1);
+
+        int col = 0;
+        char *cell = p;
+        while (cell && col < num_cols) {
+            char *sep = strchr(cell, delim);
+            if (sep) *sep = '\0';
+
+            while (*cell == ' ' || *cell == '\t' || *cell == '"') cell++;
+            size_t clen = strlen(cell);
+            while (clen > 0 && (cell[clen - 1] == ' ' || cell[clen - 1] == '\t' || cell[clen - 1] == '"' || cell[clen - 1] == '\r')) {
+                cell[clen - 1] = '\0';
+                clen--;
+            }
+
+            if (col == x_col_idx && clen > 0) {
+                strncpy(dp->x_label, cell, sizeof(dp->x_label) - 1);
+                dp->x_label[sizeof(dp->x_label) - 1] = '\0';
+            }
+
+            for (int m = 0; m < ds->num_metrics; m++) {
+                if (metric_col_indices[m] == col && clen > 0) {
+                    char num_buf[64];
+                    strncpy(num_buf, cell, sizeof(num_buf) - 1);
+                    num_buf[sizeof(num_buf) - 1] = '\0';
+                    char *cp = strchr(num_buf, ',');
+                    if (cp) *cp = '.';
+                    char *end_ptr = NULL;
+                    double v = strtod(num_buf, &end_ptr);
+                    if (end_ptr != num_buf) {
+                        dp->values[m] = v;
+                    }
+                }
+            }
+
+            col++;
+            cell = sep ? (sep + 1) : NULL;
+        }
+
+        ds->num_points++;
+        p = next_line;
+    }
+
+    free(copy);
+
+    if (ds->num_points == 0) {
+        free(ds->points);
+        ds->points = NULL;
+        return 0;
+    }
+
+    for (int m = 0; m < ds->num_metrics; m++) {
+        compute_metric_stats(ds, m);
+    }
+
     return 1;
 }
 
@@ -986,65 +1227,89 @@ int main(int argc, char **argv) {
     }
 
     if (argc == 1) {
-        FILE *fcan = fopen("sample_can_bus.json", "rb");
-        if (fcan) {
-            fclose(fcan);
-            input_filename = "sample_can_bus.json";
+        FILE *fcan_csv = fopen("sample_can_bus.csv", "rb");
+        if (fcan_csv) {
+            fclose(fcan_csv);
+            input_filename = "sample_can_bus.csv";
         } else {
-            FILE *flog = fopen("LOG_99fc1f91.json", "rb");
-            if (flog) {
-                fclose(flog);
-                input_filename = "LOG_99fc1f91.json";
+            FILE *fcan = fopen("sample_can_bus.json", "rb");
+            if (fcan) {
+                fclose(fcan);
+                input_filename = "sample_can_bus.json";
+            } else {
+                FILE *flog = fopen("LOG_99fc1f91.json", "rb");
+                if (flog) {
+                    fclose(flog);
+                    input_filename = "LOG_99fc1f91.json";
+                }
             }
         }
     }
 
     printf("========================================================\n");
-    printf("   LogPlotter C v2.2 (ANSI C99) - Windows 11 / Linux\n");
-    printf("   [NOVO] Telemetria CAN Bus & Sinais Ativos no Topo\n");
+    printf("   LogPlotter C v2.5 (ANSI C99) - Windows 11 / Linux\n");
+    printf("   [NOVO] Leitor de Arquivos CSV & JSON | Cursor & PNG\n");
     printf("========================================================\n");
     printf("[INFO] Arquivo: %s\n", input_filename);
 
     size_t file_size = 0;
-    char *json_content = read_entire_file(input_filename, &file_size);
-    if (!json_content) return 1;
-
-    const char *error_ptr = NULL;
-    JsonNode *root = json_parse(json_content, &error_ptr);
-    if (!root) {
-        fprintf(stderr, "[ERRO] Falha ao analisar JSON proximo a: %.40s\n", error_ptr ? error_ptr : "");
-        free(json_content);
-        return 1;
-    }
-
-    JsonNode *array_node = NULL;
-    if (root->type == JSON_ARRAY) {
-        array_node = root;
-    } else if (root->type == JSON_OBJECT) {
-        array_node = json_object_get(root, "data");
-        if (!array_node) array_node = json_object_get(root, "logs");
-        if (!array_node) array_node = json_object_get(root, "records");
-    }
-
-    if (!array_node || array_node->type != JSON_ARRAY) {
-        fprintf(stderr, "[ERRO] O JSON deve conter um array de registros.\n");
-        json_free(root);
-        free(json_content);
-        return 1;
-    }
-
-    size_t total_records = json_array_length(array_node);
-    if (total_records == 0) {
-        fprintf(stderr, "[ERRO] Array de registros esta vazio.\n");
-        json_free(root);
-        free(json_content);
-        return 1;
-    }
+    char *file_content = read_entire_file(input_filename, &file_size);
+    if (!file_content) return 1;
 
     Dataset ds;
     memset(&ds, 0, sizeof(Dataset));
-    ds.num_points = (int)total_records;
-    ds.points = (DataPoint*)malloc(ds.num_points * sizeof(DataPoint));
+    JsonNode *root = NULL;
+
+    int is_csv = (strstr(input_filename, ".csv") != NULL || strstr(input_filename, ".CSV") != NULL);
+    if (is_csv) {
+        printf("[INFO] Formato identificado: CSV (.csv)\n");
+        if (!load_csv_dataset(file_content, &ds, x_key_param, num_requested_metrics, requested_metrics)) {
+            fprintf(stderr, "[ERRO] Nao foi possivel carregar o arquivo CSV '%s'\n", input_filename);
+            free(file_content);
+            return 1;
+        }
+    } else {
+        const char *error_ptr = NULL;
+        root = json_parse(file_content, &error_ptr);
+        if (!root) {
+            // Tenta fallback para CSV
+            if (load_csv_dataset(file_content, &ds, x_key_param, num_requested_metrics, requested_metrics)) {
+                printf("[INFO] Formato identificado como CSV via analise de conteudo\n");
+            } else {
+                fprintf(stderr, "[ERRO] Falha ao analisar JSON proximo a: %.40s\n", error_ptr ? error_ptr : "");
+                free(file_content);
+                return 1;
+            }
+        }
+    }
+
+    if (!is_csv && root) {
+        JsonNode *array_node = NULL;
+        if (root->type == JSON_ARRAY) {
+            array_node = root;
+        } else if (root->type == JSON_OBJECT) {
+            array_node = json_object_get(root, "data");
+            if (!array_node) array_node = json_object_get(root, "logs");
+            if (!array_node) array_node = json_object_get(root, "records");
+        }
+
+        if (!array_node || array_node->type != JSON_ARRAY) {
+            fprintf(stderr, "[ERRO] O JSON deve conter um array de registros.\n");
+            json_free(root);
+            free(file_content);
+            return 1;
+        }
+
+        size_t total_records = json_array_length(array_node);
+        if (total_records == 0) {
+            fprintf(stderr, "[ERRO] Array de registros esta vazio.\n");
+            json_free(root);
+            free(file_content);
+            return 1;
+        }
+
+        ds.num_points = (int)total_records;
+        ds.points = (DataPoint*)malloc(ds.num_points * sizeof(DataPoint));
 
     if (!x_key_param) {
         const char *candidates[] = { "#", "timestamp", "horario", "time", "date", "minuto", "tempo", "step", "seq", "id" };
@@ -1163,9 +1428,10 @@ int main(int argc, char **argv) {
     for (int m = 0; m < ds.num_metrics; m++) {
         compute_metric_stats(&ds, m);
     }
+    } // Fim do bloco if (!is_csv && root)
 
     printf("\n+--------------------------------+----------+----------+----------+----------+\n");
-    printf("| Sinal / Metrica CAN            |   Minimo |   Maximo |    Media | Desv.Padr|\n");
+    printf("| Sinal / Metrica                |   Minimo |   Maximo |    Media | Desv.Padr|\n");
     printf("+--------------------------------+----------+----------+----------+----------+\n");
     for (int m = 0; m < ds.num_metrics; m++) {
         MetricStats *st = &ds.stats[m];
@@ -1179,8 +1445,8 @@ int main(int argc, char **argv) {
     }
 
     free(ds.points);
-    json_free(root);
-    free(json_content);
+    if (root) json_free(root);
+    free(file_content);
 
     printf("\n[CONCLUIDO] Executavel gerou com sucesso o arquivo '%s'!\n", html_output);
     return 0;

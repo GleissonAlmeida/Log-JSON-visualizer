@@ -151,7 +151,7 @@ export default function App() {
               LogPlotter <span className="text-indigo-400 font-mono font-normal">Windows 11 (.EXE)</span>
             </span>
             <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-700/60 px-2 py-0.5 rounded-full font-semibold">
-              v2.4 Cursor &amp; Export PNG
+              v2.5 Leitor CSV &amp; JSON
             </span>
           </div>
         </div>
@@ -159,23 +159,23 @@ export default function App() {
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
           <a
-            href="/log_plotter.exe?v=2.4.0"
+            href="/log_plotter.exe?v=2.5.0"
             download="log_plotter.exe"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
-            title="Download do executável log_plotter.exe v2.4 compilado para Windows 11 com Cursor Eixo X e Exportação PNG"
+            title="Download do executável log_plotter.exe v2.5 compilado para Windows 11 com suporte a CSV, JSON, Cursor Eixo X e Exportação PNG"
           >
             <Download className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Baixar .EXE (v2.4)</span>
+            <span>Baixar .EXE (v2.5)</span>
           </a>
 
           <a
-            href="/log_plotter_windows11.zip?v=2.4.0"
+            href="/log_plotter_windows11.zip?v=2.5.0"
             download="log_plotter_windows11.zip"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors shadow-sm"
-            title="Download do pacote .ZIP atualizado (v2.4) com log_plotter.exe, sample_can_bus.json, Cursor Eixo X, script e documentação"
+            title="Download do pacote .ZIP atualizado (v2.5) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
           >
             <Package className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Pacote .ZIP (v2.4)</span>
+            <span>Pacote .ZIP (v2.5)</span>
           </a>
 
           <button
@@ -192,7 +192,7 @@ export default function App() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors"
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            <span>Carregar Log JSON</span>
+            <span>Carregar Log (JSON / CSV)</span>
           </button>
         </div>
       </header>

@@ -44,14 +44,14 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
   const handlePasteSubmit = () => {
     setErrorMsg(null);
     if (!pasteText.trim()) {
-      setErrorMsg('Por favor, cole algum conteúdo JSON ou JSONL antes de continuar.');
+      setErrorMsg('Por favor, cole algum conteúdo JSON, JSONL ou CSV antes de continuar.');
       return;
     }
     try {
-      onLoadData(pasteText, 'log_colado.json');
+      onLoadData(pasteText, 'log_colado.txt');
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao processar o JSON.');
+      setErrorMsg(err.message || 'Erro ao processar os dados.');
     }
   };
 
@@ -61,7 +61,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
       setPasteText(JSON.stringify(parsed, null, 2));
       setErrorMsg(null);
     } catch {
-      setErrorMsg('Não foi possível formatar: o texto contém erros de sintaxe JSON.');
+      setErrorMsg('A formatação automática requer sintaxe JSON válida. Para CSV, os dados são interpretados diretamente.');
     }
   };
 
@@ -81,9 +81,9 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
               <FileCode2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">Carregar Dados de Log JSON</h2>
+              <h2 className="text-base font-bold text-slate-100">Carregar Dados de Log (JSON / CSV)</h2>
               <p className="text-xs text-slate-400">
-                Suporta arrays JSON convencionais, objetos aninhados e arquivos .log / JSONL
+                Suporta tabelas .csv, arrays JSON convencionais, objetos aninhados e arquivos .log / JSONL
               </p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
             }`}
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            Upload de Arquivo (.json, .log)
+            Upload de Arquivo (.csv, .json, .log)
           </button>
           <button
             onClick={() => setActiveTab('paste')}
@@ -128,7 +128,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            Colar Texto JSON / Log
+            Colar Texto (JSON / CSV)
           </button>
         </div>
 
@@ -211,12 +211,12 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
                   Clique para selecionar ou arraste o arquivo aqui
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">
-                  Arquivos suportados: .json, .log, .ndjson, .txt (tamanho recomendado até 10 MB)
+                  Arquivos suportados: .csv, .json, .log, .ndjson, .txt (tamanho recomendado até 10 MB)
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".json,.log,.ndjson,.txt,application/json,text/plain"
+                  accept=".json,.log,.ndjson,.txt,.csv,application/json,text/csv,text/plain"
                   className="hidden"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
@@ -227,10 +227,11 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
               </div>
 
               <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 leading-relaxed">
-                <span className="font-semibold text-slate-300 block mb-1">Dica de Formato:</span>
+                <span className="font-semibold text-slate-300 block mb-1">Dica de Formatos Suportados:</span>
                 O analisador aceita automaticamente:
                 <ul className="list-disc list-inside mt-1 space-y-0.5 text-slate-400 font-mono text-[11px]">
-                  <li>Array de objetos: <code>[{'{"timestamp": "...", "temp": 24}'}]</code></li>
+                  <li>Tabelas CSV delimitadas por vírgula (<code>,</code>), ponto-e-vírgula (<code>;</code>) ou tabulação (<code>\t</code>)</li>
+                  <li>Array de objetos JSON: <code>[{'{"timestamp": "...", "temp": 24}'}]</code></li>
                   <li>Objeto encapsulado: <code>{'{"logs": [...]}'}</code> ou <code>{'{"data": [...]}'}</code></li>
                   <li>Objetos aninhados: <code>{'{"metrics": {"cpu": 45}}'}</code> (convertido em metrics.cpu)</li>
                   <li>JSON Lines (JSONL): um objeto JSON por linha</li>
@@ -243,7 +244,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-300">
-                  Cole o código JSON ou as linhas de log:
+                  Cole o código JSON ou os dados em formato CSV / Log:
                 </label>
                 <button
                   type="button"
@@ -256,7 +257,7 @@ export const JsonInputModal: React.FC<JsonInputModalProps> = ({
               <textarea
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
-                placeholder='Exemplo: [{"horario": "12:00:01", "temperatura": 24.2, "pressao": 1013}, ...]'
+                placeholder='Cole aqui seu JSON ou CSV. Exemplo CSV:&#10;timestamp,pressao,temperatura,rpm&#10;10:00:01,1013.2,24.5,1200&#10;10:00:02,1013.8,24.8,1250'
                 rows={10}
                 className="w-full p-3 font-mono text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 leading-relaxed resize-y"
               />

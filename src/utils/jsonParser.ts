@@ -62,51 +62,215 @@ function isLikelyEpoch(val: number): boolean {
   return (val >= 946684800 && val <= 4102444800) || (val >= 946684800000 && val <= 4102444800000);
 }
 
+// Robust CSV tokenizer that respects quotes and delimiter
+export function parseCsvRows(input: string, delimiter?: string): { headers: string[]; rows: string[][] } {
+  const lines = input.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length === 0) {
+    return { headers: [], rows: [] };
+  }
+
+  // Auto-detect delimiter if not provided
+  if (!delimiter) {
+    const candidateDelimiters = [',', ';', '\t', '|'];
+    const sampleLines = lines.slice(0, Math.min(lines.length, 5));
+    let bestDelimiter = ',';
+    let bestScore = -1;
+
+    for (const d of candidateDelimiters) {
+      const counts = sampleLines.map(line => {
+        let count = 0;
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"') inQuotes = !inQuotes;
+          else if (!inQuotes && line[i] === d) count++;
+        }
+        return count;
+      });
+
+      // Check consistency (all sample rows have the same non-zero count)
+      const allNonZero = counts.every(c => c > 0);
+      const isConsistent = counts.every(c => c === counts[0]);
+      const score = (allNonZero ? 100 : 0) + (isConsistent ? 50 : 0) + (counts[0] || 0);
+
+      if (score > bestScore && (counts[0] || 0) > 0) {
+        bestScore = score;
+        bestDelimiter = d;
+      }
+    }
+    delimiter = bestDelimiter;
+  }
+
+  // Helper to tokenize a line respecting quotes
+  const tokenizeLine = (line: string): string[] => {
+    const tokens: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        tokens.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    tokens.push(current.trim());
+    return tokens.map(t => {
+      // Strip surrounding quotes if present
+      if (t.startsWith('"') && t.endsWith('"') && t.length >= 2) {
+        return t.slice(1, -1).replace(/""/g, '"').trim();
+      }
+      return t;
+    });
+  };
+
+  const rawHeaders = tokenizeLine(lines[0]);
+  const headers = rawHeaders.map((h, i) => (h && h.trim().length > 0 ? h.trim() : `col_${i + 1}`));
+
+  const rows: string[][] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = tokenizeLine(lines[i]);
+    // Skip empty lines
+    if (cells.length === 1 && cells[0] === '') continue;
+    rows.push(cells);
+  }
+
+  return { headers, rows };
+}
+
+// Convert CSV content into an array of objects
+export function parseCsv(input: string, filename?: string): Record<string, any>[] {
+  const { headers, rows } = parseCsvRows(input);
+  if (headers.length === 0 || rows.length === 0) {
+    throw new Error('O arquivo CSV não contém colunas ou linhas válidas de dados.');
+  }
+
+  const result: Record<string, any>[] = [];
+
+  for (let r = 0; r < rows.length; r++) {
+    const cells = rows[r];
+    const record: Record<string, any> = {};
+
+    for (let c = 0; c < headers.length; c++) {
+      const colName = headers[c];
+      const valStr = cells[c] !== undefined ? cells[c] : '';
+
+      if (valStr === '' || valStr.toLowerCase() === 'null' || valStr.toLowerCase() === 'nan') {
+        record[colName] = null;
+        continue;
+      }
+
+      // Check boolean
+      if (valStr.toLowerCase() === 'true') {
+        record[colName] = true;
+        continue;
+      }
+      if (valStr.toLowerCase() === 'false') {
+        record[colName] = false;
+        continue;
+      }
+
+      // Check date / datetime
+      if (isDateString(valStr)) {
+        record[colName] = valStr;
+        continue;
+      }
+
+      // Check number (support standard 123.45 and Brazilian/European 123,45)
+      let cleanedNumStr = valStr;
+      if (/^-?\d+,\d+$/.test(valStr)) {
+        cleanedNumStr = valStr.replace(',', '.');
+      }
+
+      const numVal = Number(cleanedNumStr);
+      if (!isNaN(numVal) && cleanedNumStr.trim() !== '') {
+        record[colName] = numVal;
+      } else {
+        record[colName] = valStr;
+      }
+    }
+
+    record._index = r;
+    result.push(record);
+  }
+
+  return result;
+}
+
 export function parseJsonLog(input: string, filename?: string): ParseResult {
   const startTime = performance.now();
   let rawParsed: any;
   const trimmed = input.trim();
 
-  // Try standard JSON.parse first
-  try {
-    rawParsed = JSON.parse(trimmed);
-  } catch {
-    // If standard JSON fails, test if it's NDJSON (JSON Lines / .log file) or comma-separated objects
-    const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-    const parsedLines: any[] = [];
-    let parsedCount = 0;
+  // If filename clearly indicates CSV or if content looks like CSV (no JSON brackets, has delimiters)
+  const isExplicitCsv = filename && filename.toLowerCase().endsWith('.csv');
 
-    for (const line of lines) {
-      try {
-        const cleanLine = line.endsWith(',') ? line.slice(0, -1).trim() : line;
-        const item = JSON.parse(cleanLine);
-        parsedLines.push(item);
-        parsedCount++;
-      } catch {
-        // Try extracting JSON objects if multiple per line
-        const objMatches = line.match(/\{[^}]+\}/g);
-        if (objMatches) {
-          for (const m of objMatches) {
-            try {
-              const item = JSON.parse(m);
-              parsedLines.push(item);
-              parsedCount++;
-            } catch {
-              // skip
+  if (isExplicitCsv) {
+    try {
+      rawParsed = parseCsv(trimmed, filename);
+    } catch (csvErr: any) {
+      throw new Error(`Erro ao processar CSV: ${csvErr.message}`);
+    }
+  } else {
+    // Try standard JSON.parse first
+    try {
+      rawParsed = JSON.parse(trimmed);
+    } catch {
+      // If standard JSON fails, test if it's NDJSON (JSON Lines / .log file) or comma-separated objects
+      const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const parsedLines: any[] = [];
+      let parsedCount = 0;
+
+      for (const line of lines) {
+        try {
+          const cleanLine = line.endsWith(',') ? line.slice(0, -1).trim() : line;
+          const item = JSON.parse(cleanLine);
+          parsedLines.push(item);
+          parsedCount++;
+        } catch {
+          // Try extracting JSON objects if multiple per line
+          const objMatches = line.match(/\{[^}]+\}/g);
+          if (objMatches) {
+            for (const m of objMatches) {
+              try {
+                const item = JSON.parse(m);
+                parsedLines.push(item);
+                parsedCount++;
+              } catch {
+                // skip
+              }
             }
           }
         }
       }
-    }
 
-    if (parsedCount > 0) {
-      rawParsed = parsedLines;
-    } else {
-      // Also test wrapping in [ ... ]
-      try {
-        rawParsed = JSON.parse(`[${trimmed}]`);
-      } catch {
-        throw new Error('Não foi possível interpretar o texto como JSON ou JSONL (JSON Lines). Verifique a sintaxe.');
+      if (parsedCount > 0) {
+        rawParsed = parsedLines;
+      } else {
+        // Also test wrapping in [ ... ]
+        try {
+          rawParsed = JSON.parse(`[${trimmed}]`);
+        } catch {
+          // Fallback: Test if the file is a CSV format (e.g. pasted CSV or .txt/.log containing CSV data)
+          try {
+            const csvData = parseCsv(trimmed, filename);
+            if (csvData && csvData.length > 0 && Object.keys(csvData[0]).length > 1) {
+              rawParsed = csvData;
+            } else {
+              throw new Error();
+            }
+          } catch {
+            throw new Error('Não foi possível interpretar o conteúdo como JSON, JSONL ou CSV. Verifique a sintaxe.');
+          }
+        }
       }
     }
   }

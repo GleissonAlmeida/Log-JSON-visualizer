@@ -1,6 +1,6 @@
 {
   "name": "Visualizador de Logs JSON & Gráficos",
-  "description": "Carregue ou cole logs em formato JSON / JSONL e plote métricas selecionadas em gráficos interativos com Chart.js.",
+  "description": "Carregue ou cole logs em formato CSV, JSON ou JSONL e plote métricas selecionadas em gráficos interativos com Chart.js.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

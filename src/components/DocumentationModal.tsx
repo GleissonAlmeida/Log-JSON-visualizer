@@ -76,9 +76,9 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs JSON (v2.4)</h1>
+            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs CSV &amp; JSON (v2.5)</h1>
             <p className="text-slate-400">
-              Leitor de logs JSON de alta performance e plotador gráfico interativo desenvolvido em <b>Linguagem C (ANSI C99)</b> com geração dinâmica de gráficos em <b>Chart.js</b> e executável nativo para <b>Windows 11 (64-bit)</b>.
+              Leitor de logs e telemetria de alta performance e plotador gráfico interativo desenvolvido em <b>Linguagem C (ANSI C99)</b> com geração dinâmica de gráficos em <b>Chart.js</b> e executável nativo para <b>Windows 11 (64-bit)</b>.
             </p>
           </div>
 
@@ -90,6 +90,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
               ✨ Principais Funcionalidades
             </h2>
             <ul className="space-y-2 list-disc list-inside text-slate-300 text-xs sm:text-sm">
+              <li><b>Leitor Completo de Arquivos CSV:</b> auto-detecção de delimitadores (vírgula <code>,</code>, ponto-e-vírgula <code>;</code>, tabulação <code>\t</code> e pipe <code>|</code>) e conversão inteligente de formatos numéricos brasileiros/europeus (ex: <code>24,5</code>).</li>
               <li><b>Cursor Interativo do Eixo X:</b> rastreamento de amostras a 60 FPS por ponteiro do mouse, arrasto ou navegação pelo teclado (← / →), com opção de fixar e liberar o cursor.</li>
               <li><b>Hold de Telemetria (Sample & Hold):</b> recupera o último valor válido transmitido na ausência de dados na amostra atual, tanto no traçado gráfico quanto no HUD (com indicador <code>[hold]</code>).</li>
               <li><b>Exportação para PNG com Dados Completos:</b> salva imagem em alta definição gravando o cursor, etiqueta da amostra, pontos nas curvas e cartão de inspeção com os valores numéricos.</li>
@@ -114,21 +115,25 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
               Executável para Windows 11 (Sem Instalação)
             </h2>
             <p className="text-xs text-slate-400 mb-3">
-              O executável <code>log_plotter.exe</code> foi compilado estaticamente para arquitetura x86-64 com MinGW-w64. Não requer Python, Node.js ou compiladores instalados no seu computador.
+              O executável <code>log_plotter.exe</code> foi compilado estaticamente para arquitetura x86-64 com MinGW-w64. Funciona tanto com arquivos <b>.csv</b> quanto com arquivos <b>.json</b> ou <b>.log</b>.
             </p>
 
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between text-slate-400 border-b border-slate-800/80 pb-2">
                 <span>Comandos no Terminal do Windows (PowerShell / CMD)</span>
                 <button
-                  onClick={() => handleCopy('.\\log_plotter.exe sample_iot.json -x timestamp -m temperatura,umidade,pressao_hpa --html grafico.html\nstart grafico.html', 'cmd')}
+                  onClick={() => handleCopy('.\\log_plotter.exe sample_can_bus.csv --html grafico.html\nstart grafico.html', 'cmd')}
                   className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300"
                 >
                   {copiedCode === 'cmd' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedCode === 'cmd' ? 'Copiado!' : 'Copiar'}</span>
                 </button>
               </div>
-              <div className="text-slate-500"># Execução direta com geração de HTML interativo:</div>
+              <div className="text-slate-500"># Execução direta com arquivo CSV:</div>
+              <div className="text-indigo-300">
+                .\log_plotter.exe sample_can_bus.csv --html grafico.html
+              </div>
+              <div className="text-slate-500 pt-1"># Execução com arquivo JSON especificando sinais:</div>
               <div className="text-indigo-300">
                 .\log_plotter.exe sample_iot.json -x timestamp -m temperatura,umidade,pressao_hpa --html grafico.html
               </div>
@@ -176,14 +181,23 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
           <div>
             <h2 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
               <FileCode2 className="w-5 h-5 text-indigo-400" />
-              Exemplo de Formato de Log JSON Aceito
+              Formatos de Arquivo Suportados (CSV &amp; JSON)
             </h2>
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 overflow-x-auto">
-              <pre>{`[
-  { "timestamp": "08:00:00", "temperatura": 22.4, "pressao_hpa": 1013.2, "bateria_pct": 98.0 },
-  { "timestamp": "08:01:00", "temperatura": 22.8, "pressao_hpa": 1013.1, "bateria_pct": 97.8 },
-  { "timestamp": "08:02:00", "temperatura": 23.1, "pressao_hpa": 1013.0, "bateria_pct": 97.6 }
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 overflow-x-auto">
+                <div className="text-indigo-400 font-bold mb-1">Exemplo CSV (com vírgula ou ponto-e-vírgula):</div>
+                <pre>{`#,BrakeSwitch,curr_gear,sel_gear,Speed
+1,1.0,2.0,2.0,0.00
+2,0.0,2.0,2.0,12.50
+3,0.0,3.0,3.0,28.40`}</pre>
+              </div>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 overflow-x-auto">
+                <div className="text-indigo-400 font-bold mb-1">Exemplo JSON / JSONL:</div>
+                <pre>{`[
+  { "timestamp": "08:00", "temp": 22.4, "pressao": 1013 },
+  { "timestamp": "08:01", "temp": 22.8, "pressao": 1012 }
 ]`}</pre>
+              </div>
             </div>
           </div>
         </div>

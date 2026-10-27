@@ -1,31 +1,33 @@
 ========================================================================
-   LOGPLOTTER EM LINGUAGEM C (v2.4) - PACOTE EXECUTÁVEL PARA WINDOWS 11
+   LOGPLOTTER EM LINGUAGEM C (v2.5) - PACOTE EXECUTÁVEL PARA WINDOWS 11
 ========================================================================
 
 Este pacote contém o executável binário compilado nativamente para Windows 11 / Windows 10 (x86-64),
 estaticamente vinculado (-static), sem necessidade de instalar DLLs externas, compilador, Python ou Node.js.
 
-NOVIDADES DA VERSÃO 2.4:
+NOVIDADES DA VERSÃO 2.5:
 -------------------------
-1. [NOVO] Exportação para PNG com Cursor e Valores das Amostras:
-   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gerada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os pontos marcadores em cada curva e um cartão flutuante translúcido com os valores de cada métrica.
-2. [NOVO] Hold de Telemetria (Sample & Hold) no Cursor e HUD:
-   - Quando uma variável de telemetria esparsa não for transmitida na amostra apontada, o sistema recupera o último valor válido recebido e exibe a etiqueta [hold], evitando a exibição de N/D.
-3. [NOVO] Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
-   - Adicionada margem de respiro de 36px abaixo da legenda dos sinais, garantindo que a etiqueta do cursor nunca sobreponha os nomes das métricas.
-4. [NOVO] Cursor Eixo X Totalmente Reativo:
-   - Rastreamento instantâneo por mouse, arrasto e teclas Seta Esquerda/Direita (←/→), com opção de fixar e liberar o cursor no ponto desejado.
-5. Suporte Completo a Logs CAN Bus Automotivos (sample_can_bus.json / NDJSON / JSON Lines).
-6. Classificação Inteligente de Sinais: Mostra primeiro os sinais selecionados no topo (com separador e ordenação A-Z).
+1. [NOVO] Suporte Completo à Leitura de Arquivos CSV (.csv):
+   - Lê arquivos CSV com detecção automática de separadores (vírgula ',', ponto-e-vírgula ';' e tabulação '\t').
+   - Suporta números decimais com vírgula (padrão brasileiro/europeu, ex: 12,50).
+   - O executável C aceita arquivos .csv diretamente pela linha de comando ou arrastando o arquivo para cima do .exe.
+2. Exportação para PNG com Cursor e Valores das Amostras:
+   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gerada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os pontos marcadores em cada curva e o cartão flutuante de inspeção.
+3. Hold de Telemetria (Sample & Hold) no Cursor e HUD:
+   - Mantém o último valor válido recebido para sinais esparsos de CAN bus, exibindo o status [hold].
+4. Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
+   - Margem de respiro de 36px abaixo da legenda dos sinais, eliminando qualquer sobreposição com o cursor.
+5. Cursor Eixo X Totalmente Reativo com Navegação por Mouse e Teclado.
 
 CONTEÚDO DO PACOTE:
 --------------------
-1. log_plotter.exe         - Binário executável nativo em C99 (64-bit Windows).
-2. sample_can_bus.json     - Log CAN Bus automotivo real (BrakeSwitch, Speed, Gear, etc.).
-3. sample_iot.json         - Exemplo de telemetria IoT convencional.
-4. grafico_c.html          - Gráfico interativo completo gerado pelo executável em C.
-5. executar_no_windows.bat - Script de 2 cliques para rodar e abrir o gráfico automaticamente.
-6. LEIA-ME_WINDOWS.txt     - Este arquivo com as instruções de uso.
+1. log_plotter.exe         - Binário executável nativo em C99 (64-bit Windows com suporte a CSV e JSON).
+2. sample_can_bus.csv      - Log CAN Bus em formato CSV real (1450 amostras).
+3. sample_can_bus.json     - Log CAN Bus automotivo em formato JSON Lines.
+4. sample_iot.json         - Exemplo de telemetria IoT convencional.
+5. grafico_c.html          - Gráfico interativo completo gerado pelo executável em C.
+6. executar_no_windows.bat - Script de 2 cliques para rodar e abrir o gráfico automaticamente.
+7. LEIA-ME_WINDOWS.txt     - Este arquivo com as instruções de uso.
 
 COMO USAR NO WINDOWS 11:
 ------------------------
