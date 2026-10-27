@@ -190,9 +190,10 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
         {/* Chart type tabs */}
         <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg text-xs mb-3">
           <button
+            type="button"
             onClick={() => onChartTypeChange('line')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-colors ${
-              chartType === 'line' && !fillArea
+              chartType === 'line'
                 ? 'bg-indigo-600 text-white shadow'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -201,12 +202,10 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
             Linha
           </button>
           <button
-            onClick={() => {
-              onChartTypeChange('area');
-              if (!fillArea) onToggleFill();
-            }}
+            type="button"
+            onClick={() => onChartTypeChange('area')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-colors ${
-              (chartType === 'area' || fillArea) && chartType !== 'bar' && chartType !== 'stepped'
+              chartType === 'area'
                 ? 'bg-indigo-600 text-white shadow'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -215,6 +214,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
             Área
           </button>
           <button
+            type="button"
             onClick={() => onChartTypeChange('bar')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-colors ${
               chartType === 'bar'
@@ -226,6 +226,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
             Barras
           </button>
           <button
+            type="button"
             onClick={() => onChartTypeChange('stepped')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-medium transition-colors ${
               chartType === 'stepped'

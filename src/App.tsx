@@ -138,6 +138,17 @@ export default function App() {
     setSelectedMetrics([]);
   };
 
+  const handleChartTypeChange = (type: GlobalChartType) => {
+    setChartType(type);
+    if (type === 'line') {
+      setFillArea(false);
+    } else if (type === 'area') {
+      setFillArea(true);
+    } else if (type === 'bar' || type === 'stepped') {
+      setFillArea(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Header Bar */}
@@ -212,7 +223,7 @@ export default function App() {
               onSelectAllNumeric={handleSelectAllNumeric}
               onClearAllMetrics={handleClearAllMetrics}
               chartType={chartType}
-              onChartTypeChange={setChartType}
+              onChartTypeChange={handleChartTypeChange}
               showPoints={showPoints}
               onTogglePoints={() => setShowPoints(!showPoints)}
               fillArea={fillArea}

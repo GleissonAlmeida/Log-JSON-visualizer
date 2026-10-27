@@ -147,12 +147,13 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
       const baseColor = metric.color;
       const isStepped = chartType === 'stepped';
+      const isArea = chartType === 'area';
 
       return {
         label: metric.label || metric.key,
         data,
         borderColor: baseColor,
-        backgroundColor: fillArea ? `${baseColor}25` : `${baseColor}90`,
+        backgroundColor: isArea ? `${baseColor}25` : (chartType === 'bar' ? `${baseColor}90` : `${baseColor}25`),
         borderWidth: 2.2,
         tension: isStepped ? 0 : tension,
         stepped: isStepped ? ('before' as const) : false,
@@ -161,7 +162,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         pointBackgroundColor: baseColor,
         pointBorderColor: '#ffffff',
         pointBorderWidth: 1.5,
-        fill: fillArea,
+        fill: isArea,
         spanGaps: true,
         yAxisID: dualAxis ? metric.yAxis : 'y',
       };
