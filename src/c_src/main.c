@@ -739,7 +739,7 @@ int main(int argc, char **argv) {
         }
     } else {
         for (int m = 0; m < num_requested_metrics; m++) {
-            strncpy(ds.metric_names[m], requested_metrics[m], MAX_LABEL_LEN - 1);
+            snprintf(ds.metric_names[m], sizeof(ds.metric_names[m]), "%s", requested_metrics[m]);
         }
         ds.num_metrics = num_requested_metrics;
     }
