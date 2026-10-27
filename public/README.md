@@ -37,16 +37,21 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 - **Detecção Inteligente**: identifica automaticamente campos temporais (`timestamp`, `horario`, `data`, `time`) e variáveis numéricas para plotagem.
 
 ### 📈 Gráficos Interativos (Chart.js)
+- **Cursor de Inspeção do Eixo X**:
+  - Linha vertical tracejada com rastreamento a 60 FPS por movimento do mouse, arrasto ou navegação via teclado (← / →).
+  - Opção para **Fixar / Liberar** o cursor no ponto desejado com destaque visual (âmbar/dourado).
+  - Barra de inspeção (*HUD*) exibindo a identificação da amostra e o valor instantâneo de cada métrica.
+  - Espaçamento vertical dedicado (36px) entre a legenda dos sinais e o gráfico, eliminando qualquer sobreposição.
+- **Hold de Telemetria (CAN Bus / Sample & Hold)**:
+  - Recuperação automática do último valor válido recebido para sinais com broadcast em frequências alternadas, tanto no gráfico quanto no HUD (com indicador `[hold]`).
 - **Eixo X Dinâmico**: selecione qualquer campo temporal ou utilize o índice sequencial numérico (`#1, #2, #3...`).
 - **Múltiplas Séries Simultâneas**: plote quantas métricas desejar com paleta de cores de alto contraste.
-- **Eixo Y Duplo (Left / Right)**: plote simultaneamente métricas de ordens de grandeza diferentes (ex.: temperatura a 25°C e pressão a 1013 hPa) sem distorção das curvas.
-- **Ajuste da Escala do Eixo Y**:
-  - Modo **Automático** ou **Manual** (com definição de valores mínimos e máximos para ambos os eixos).
-  - Opção **Iniciar no zero (0)**.
-  - Opção **Escala Logarítmica** para dados com picos extremos.
-- **Estilos Gráficos**: alternância instantânea entre **Linha**, **Área preenchida**, **Barras** e **Degraus** (*Stepped lines*).
+- **Classificação Inteligente**: exibe os sinais selecionados no topo com botão alternador `[Selecionados 1º]` / `[A-Z Geral]`.
+- **Eixo Y Duplo (Left / Right)**: plote simultaneamente métricas de ordens de grandeza diferentes sem distorção das curvas.
+- **Ajuste da Escala do Eixo Y**: modo Automático ou Manual, Iniciar no zero (0) e Escala Logarítmica.
+- **Estilos Gráficos**: alternância instantânea entre Linha, Área preenchida, Barras e Degraus (*Stepped lines*).
 - **Filtro de Faixa Temporal**: barra de rolagem interativa (*range scrubber*) com atalhos para `100%`, `50%`, `25%` e `Últimos 30` registros.
-- **Exportação**: download do gráfico gerado em imagem **PNG em alta resolução** e modo **Tela Cheia**.
+- **Exportação com Dados do Cursor**: download do gráfico em imagem **PNG em alta resolução** com fundo escuro, incluindo a linha do cursor, marcador da amostra, pontos de interseção e cartão flutuante de inspeção com todos os valores.
 
 ---
 

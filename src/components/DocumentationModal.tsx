@@ -76,7 +76,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs JSON</h1>
+            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs JSON (v2.4)</h1>
             <p className="text-slate-400">
               Leitor de logs JSON de alta performance e plotador gráfico interativo desenvolvido em <b>Linguagem C (ANSI C99)</b> com geração dinâmica de gráficos em <b>Chart.js</b> e executável nativo para <b>Windows 11 (64-bit)</b>.
             </p>
@@ -90,14 +90,18 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
               ✨ Principais Funcionalidades
             </h2>
             <ul className="space-y-2 list-disc list-inside text-slate-300 text-xs sm:text-sm">
+              <li><b>Cursor Interativo do Eixo X:</b> rastreamento de amostras a 60 FPS por ponteiro do mouse, arrasto ou navegação pelo teclado (← / →), com opção de fixar e liberar o cursor.</li>
+              <li><b>Hold de Telemetria (Sample & Hold):</b> recupera o último valor válido transmitido na ausência de dados na amostra atual, tanto no traçado gráfico quanto no HUD (com indicador <code>[hold]</code>).</li>
+              <li><b>Exportação para PNG com Dados Completos:</b> salva imagem em alta definição gravando o cursor, etiqueta da amostra, pontos nas curvas e cartão de inspeção com os valores numéricos.</li>
+              <li><b>Separação Visual da Legenda:</b> margem de respiro dedicada entre os nomes dos sinais e a área do gráfico, eliminando sobreposições.</li>
+              <li><b>Classificação de Sinais:</b> agrupamento inteligente que exibe as variáveis selecionadas no topo, com ordenação alfabética (A-Z) e alternador rápido.</li>
               <li><b>Leitura Dinâmica de JSON/JSONL:</b> suporte a upload de arquivos e colagem de texto com detecção automática de registros e propriedades.</li>
               <li><b>Desaninhamento Automático:</b> objetos aninhados são achatados em notação ponto (ex: <code>sensores.temperatura</code>).</li>
-              <li><b>Eixo X Flexível:</b> escolha campos temporais (timestamps, horas, datas) ou numeração sequencial.</li>
+              <li><b>Eixo X Flexível:</b> escolha campos temporais (timestamps, horas, datas) ou numeração sequencial (<code>#</code>).</li>
               <li><b>Eixo Y Duplo (Left / Right):</b> plote variáveis de escalas distintas sem distorcer o traçado.</li>
               <li><b>Ajuste Fino da Escala Y:</b> modo automático ou manual com limites numéricos, opção de iniciar no zero (0) e escala logarítmica.</li>
               <li><b>Estilos Gráficos:</b> alterne instantaneamente entre Linha, Área, Barras e Degraus (Stepped).</li>
               <li><b>Zoom e Faixa Temporal:</b> controle deslizante com atalhos de 100%, 50%, 25% e últimos 30 pontos.</li>
-              <li><b>Exportação:</b> download do gráfico em imagem PNG e visualização em tela cheia.</li>
             </ul>
           </div>
 

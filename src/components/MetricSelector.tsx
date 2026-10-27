@@ -24,6 +24,8 @@ interface MetricSelectorProps {
   onYAxisScaleChange: (scale: YAxisScaleConfig) => void;
   holdSparseTelemetry?: boolean;
   onToggleHoldSparseTelemetry?: () => void;
+  showCursor?: boolean;
+  onToggleCursor?: () => void;
   onOpenLoadModal?: () => void;
   onLoadFile?: (file: File) => void;
   datasetName?: string;
@@ -51,6 +53,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   onYAxisScaleChange,
   holdSparseTelemetry = true,
   onToggleHoldSparseTelemetry,
+  showCursor = true,
+  onToggleCursor,
   onOpenLoadModal,
   onLoadFile,
   datasetName,
@@ -270,6 +274,26 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                 <span>Hold de Telemetria (CAN)</span>
                 <span className="text-[10px] text-indigo-400 bg-indigo-950/90 px-1.5 py-0.5 rounded border border-indigo-800/60 font-mono">
                   Sample &amp; Hold
+                </span>
+              </span>
+            </label>
+          )}
+
+          {onToggleCursor && (
+            <label
+              className="col-span-2 flex items-center gap-2 text-slate-300 cursor-pointer bg-slate-950/70 p-2 rounded-lg border border-slate-800 hover:border-slate-700"
+              title="Exibe um cursor vertical no eixo X com painel de inspeção de valores instantâneos das amostras"
+            >
+              <input
+                type="checkbox"
+                checked={showCursor}
+                onChange={onToggleCursor}
+                className="accent-indigo-500 rounded"
+              />
+              <span className="flex items-center justify-between flex-1">
+                <span>Cursor Eixo X (Amostras)</span>
+                <span className="text-[10px] text-indigo-400 bg-indigo-950/90 px-1.5 py-0.5 rounded border border-indigo-800/60 font-mono">
+                  Inspeção
                 </span>
               </span>
             </label>
@@ -539,7 +563,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
                           config.yAxis === 'y1'
                             ? 'bg-sky-950 text-sky-400 border-sky-800'
-                            : 'bg-slate-900 text-slate-400 border-slate-700'
+                            : 'bg-slate-900 text-white border-slate-700'
                         }`}
                         title={config.yAxis === 'y1' ? 'Plotado no Eixo Direito (Y1)' : 'Plotado no Eixo Esquerdo (Y)'}
                       >

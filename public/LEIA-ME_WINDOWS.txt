@@ -1,43 +1,55 @@
 ========================================================================
-   LOGPLOTTER EM LINGUAGEM C - PACOTE EXECUTÁVEL PARA WINDOWS 11 (64-BIT)
+   LOGPLOTTER EM LINGUAGEM C (v2.4) - PACOTE EXECUTÁVEL PARA WINDOWS 11
 ========================================================================
 
 Este pacote contém o executável binário compilado nativamente para Windows 11 / Windows 10 (x86-64),
-sem necessidade de instalar nenhum compilador, Python ou Node.js.
+estaticamente vinculado (-static), sem necessidade de instalar DLLs externas, compilador, Python ou Node.js.
+
+NOVIDADES DA VERSÃO 2.4:
+-------------------------
+1. [NOVO] Exportação para PNG com Cursor e Valores das Amostras:
+   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gerada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os pontos marcadores em cada curva e um cartão flutuante translúcido com os valores de cada métrica.
+2. [NOVO] Hold de Telemetria (Sample & Hold) no Cursor e HUD:
+   - Quando uma variável de telemetria esparsa não for transmitida na amostra apontada, o sistema recupera o último valor válido recebido e exibe a etiqueta [hold], evitando a exibição de N/D.
+3. [NOVO] Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
+   - Adicionada margem de respiro de 36px abaixo da legenda dos sinais, garantindo que a etiqueta do cursor nunca sobreponha os nomes das métricas.
+4. [NOVO] Cursor Eixo X Totalmente Reativo:
+   - Rastreamento instantâneo por mouse, arrasto e teclas Seta Esquerda/Direita (←/→), com opção de fixar e liberar o cursor no ponto desejado.
+5. Suporte Completo a Logs CAN Bus Automotivos (sample_can_bus.json / NDJSON / JSON Lines).
+6. Classificação Inteligente de Sinais: Mostra primeiro os sinais selecionados no topo (com separador e ordenação A-Z).
 
 CONTEÚDO DO PACOTE:
 --------------------
-1. log_plotter.exe         - Binário executável nativo em C99 (64-bit).
-2. sample_iot.json         - Exemplo de log de dados em formato JSON com telemetria.
-3. executar_no_windows.bat - Script de 2 cliques para rodar e abrir o gráfico automaticamente.
-4. LEIA-ME_WINDOWS.txt     - Este arquivo com as instruções de uso.
+1. log_plotter.exe         - Binário executável nativo em C99 (64-bit Windows).
+2. sample_can_bus.json     - Log CAN Bus automotivo real (BrakeSwitch, Speed, Gear, etc.).
+3. sample_iot.json         - Exemplo de telemetria IoT convencional.
+4. grafico_c.html          - Gráfico interativo completo gerado pelo executável em C.
+5. executar_no_windows.bat - Script de 2 cliques para rodar e abrir o gráfico automaticamente.
+6. LEIA-ME_WINDOWS.txt     - Este arquivo com as instruções de uso.
 
 COMO USAR NO WINDOWS 11:
 ------------------------
 Opção A (Mais fácil - 2 cliques):
   - Dê um duplo clique no arquivo 'executar_no_windows.bat'.
   - O terminal do Windows abrirá, processará o log, exibirá a tabela de
-    estatísticas e o gráfico ASCII, e abrirá o arquivo 'grafico_c.html'
+    estatísticas detalhada e abrirá o arquivo 'grafico_c.html'
     no Microsoft Edge ou no seu navegador padrão.
 
-Opção B (Linha de comando / CMD / PowerShell / Windows Terminal):
+Opção B (Arrastar e soltar):
+  - Arraste qualquer arquivo .json (ex: sample_can_bus.json ou seu log CAN)
+    diretamente para cima do ícone do 'log_plotter.exe'.
+
+Opção C (Linha de comando / CMD / PowerShell / Windows Terminal):
   Abra o prompt na pasta do programa e execute:
 
-  # 1. Execução básica:
-  .\log_plotter.exe sample_iot.json
+  # 1. Processar log CAN Bus:
+  .\log_plotter.exe sample_can_bus.json --html grafico_c.html
 
-  # 2. Especificando o campo do Eixo X e as métricas desejadas:
-  .\log_plotter.exe sample_iot.json -x timestamp -m temperatura,umidade,pressao_hpa
+  # 2. Executar diretamente sem parâmetros (auto-detecta sample_can_bus.json):
+  .\log_plotter.exe
 
-  # 3. Gerando o gráfico interativo Chart.js:
-  .\log_plotter.exe sample_iot.json --html meu_grafico.html
-  start meu_grafico.html
+  # 3. Especificando o campo do Eixo X e as métricas desejadas:
+  .\log_plotter.exe sample_can_bus.json -x # -m BrakeSwitch,WheelBasedVehicleSpeed,curr_gear,sel_gear
 
-PARÂMETROS SUPORTADOS:
-----------------------
-  -i <arquivo.json>     : Caminho do arquivo de log em formato JSON
-  -x <campo_x>          : Nome do campo para o Eixo X (ex: timestamp, horario, id)
-  -m <campo1,campo2>    : Lista separada por vírgula das métricas para o Eixo Y
-  --html <arquivo.html> : Gera arquivo HTML interativo com Chart.js
-  --gnuplot             : Gera script e dados para plotagem com Gnuplot
-  --no-ascii            : Desativa a renderização do gráfico ASCII no terminal
+  # 4. Abrir o gráfico gerado no navegador:
+  start grafico_c.html

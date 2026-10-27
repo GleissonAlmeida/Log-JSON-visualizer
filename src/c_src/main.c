@@ -168,8 +168,12 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    .range-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }\n");
     fprintf(fp, "    .btn-tool { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }\n");
     fprintf(fp, "    .btn-tool:hover { background: #334155; color: #fff; }\n");
-    fprintf(fp, "    .axis-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; background: #070d19; cursor: pointer; }\n");
+    fprintf(fp, "    .axis-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; background: #070d19; cursor: pointer; color: #ffffff; }\n");
     fprintf(fp, "    .axis-badge.right { color: #38bdf8; border-color: #0369a1; background: #082f49; }\n");
+    fprintf(fp, "    .btn-sort { background: #070d19; border: 1px solid #1e293b; color: #94a3b8; font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono'; white-space: nowrap; transition: all 0.15s; }\n");
+    fprintf(fp, "    .btn-sort.active { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }\n");
+    fprintf(fp, "    .section-divider { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid #1e293b; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }\n");
+    fprintf(fp, "    .badge-zoh { font-size: 9px; background: #1e1b4b; color: #a5b4fc; padding: 1px 5px; border-radius: 4px; border: 1px solid #4338ca; font-family: 'JetBrains Mono'; }\n");
     fprintf(fp, "  </style>\n</head>\n<body>\n");
 
     fprintf(fp, "  <div class=\"app-container\">\n");
@@ -220,6 +224,14 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          <label class=\"toggle-label\">\n");
     fprintf(fp, "            <input type=\"checkbox\" id=\"chkDualAxis\" checked onchange=\"updateChart()\"> Eixo Y duplo (L / R)\n");
     fprintf(fp, "          </label>\n");
+    fprintf(fp, "          <label class=\"toggle-label\" style=\"grid-column: span 2; display: flex; align-items: center; justify-content: space-between;\" title=\"Zero-Order Hold: Mantém o último valor transmitido para sinais esparsos de CAN bus ou sensores assíncronos\">\n");
+    fprintf(fp, "            <span style=\"display: flex; align-items: center; gap: 6px;\"><input type=\"checkbox\" id=\"chkHold\" checked onchange=\"updateChart()\"> Hold de Telemetria (CAN)</span>\n");
+    fprintf(fp, "            <span class=\"badge-zoh\">Sample &amp; Hold</span>\n");
+    fprintf(fp, "          </label>\n");
+    fprintf(fp, "          <label class=\"toggle-label\" style=\"grid-column: span 2; display: flex; align-items: center; justify-content: space-between;\" title=\"Exibe cursor vertical no eixo X com painel de inspeção de amostras\">\n");
+    fprintf(fp, "            <span style=\"display: flex; align-items: center; gap: 6px;\"><input type=\"checkbox\" id=\"chkCursor\" checked onchange=\"toggleCursor()\"> Cursor Eixo X (Amostras)</span>\n");
+    fprintf(fp, "            <span class=\"badge-zoh\" style=\"background: #1e1b4b; color: #a5b4fc; border-color: #4338ca;\">Inspeção</span>\n");
+    fprintf(fp, "          </label>\n");
     fprintf(fp, "        </div>\n");
 
     fprintf(fp, "        <div style=\"margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px;\">\n");
@@ -259,7 +271,10 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          <div style=\"font-size: 11px;\"><a href=\"#\" onclick=\"selectAllMetrics(); return false;\" style=\"color: #6366f1; text-decoration: none;\">Todas</a> &bull; <a href=\"#\" onclick=\"clearMetrics(); return false;\" style=\"color: #64748b; text-decoration: none;\">Limpar</a></div>\n");
     fprintf(fp, "        </div>\n");
 
-    fprintf(fp, "        <input type=\"text\" id=\"txtFilter\" placeholder=\"Filtrar variáveis...\" oninput=\"filterMetricsList()\" style=\"margin-bottom: 8px; font-size: 11px; padding: 6px 10px;\">\n");
+    fprintf(fp, "        <div style=\"display: flex; gap: 6px; margin-bottom: 8px;\">\n");
+    fprintf(fp, "          <input type=\"text\" id=\"txtFilter\" placeholder=\"Filtrar variáveis...\" oninput=\"filterMetricsList()\" style=\"flex: 1; font-size: 11px; padding: 6px 10px;\">\n");
+    fprintf(fp, "          <button id=\"btnSortMode\" class=\"btn-sort active\" onclick=\"toggleSortMode()\" title=\"Alternar: Selecionados no topo ou A-Z geral\">&#8645; Selecionados 1º</button>\n");
+    fprintf(fp, "        </div>\n");
 
     fprintf(fp, "        <div class=\"metric-list\" id=\"metricList\">\n");
 
@@ -307,9 +322,25 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            <button class=\"btn-tool\" onclick=\"setPreset(0.25)\">25%%</button>\n");
     fprintf(fp, "            <button class=\"btn-tool\" onclick=\"setLastN(30)\">Últimos 30</button>\n");
     fprintf(fp, "          </div>\n");
+    fprintf(fp, "          <button class=\"btn-tool active\" id=\"btnCursor\" onclick=\"toggleCursor()\" title=\"Ativar/desativar cursor vertical do eixo X\">&#9678; Cursor Eixo X</button>\n");
     fprintf(fp, "          <button class=\"btn-tool\" onclick=\"downloadPNG()\">&#128229; Salvar PNG</button>\n");
     fprintf(fp, "          <button class=\"btn-tool\" onclick=\"toggleFS()\">&#x26F6;</button>\n");
     fprintf(fp, "        </div>\n");
+    fprintf(fp, "      </div>\n");
+    fprintf(fp, "      <!-- HUD de Inspecao das Amostras -->\n");
+    fprintf(fp, "      <div id=\"cursorHud\" style=\"display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 8px 18px; background: #070d19; border-bottom: 1px solid #1e293b; gap: 8px; font-size: 11px;\">\n");
+    fprintf(fp, "        <div style=\"display: flex; align-items: center; gap: 8px; flex-wrap: wrap;\">\n");
+    fprintf(fp, "          <div style=\"display: flex; align-items: center; gap: 6px; background: #1e1b4b; border: 1px solid #4338ca; padding: 3px 8px; border-radius: 6px; color: #a5b4fc; font-family: 'JetBrains Mono';\">\n");
+    fprintf(fp, "            <span>&#9678; Amostra:</span><strong id=\"hudSampleLabel\" style=\"color: #fff;\">#1</strong>\n");
+    fprintf(fp, "            <span id=\"hudSampleIdx\" style=\"color: #818cf8; font-size: 10px;\">(1/%d)</span>\n", ds->num_points);
+    fprintf(fp, "          </div>\n");
+    fprintf(fp, "          <div style=\"display: flex; gap: 2px; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 2px;\">\n");
+    fprintf(fp, "            <button class=\"btn-tool\" style=\"padding: 2px 6px;\" onclick=\"stepCursor(-1)\">&#9664;</button>\n");
+    fprintf(fp, "            <button class=\"btn-tool\" style=\"padding: 2px 6px;\" onclick=\"stepCursor(1)\">&#9654;</button>\n");
+    fprintf(fp, "          </div>\n");
+    fprintf(fp, "          <button id=\"btnPinCursor\" class=\"btn-tool\" style=\"font-size: 10px; padding: 3px 8px; font-family: 'JetBrains Mono';\" onclick=\"togglePinCursor()\">&#128204; Fixar Cursor</button>\n");
+    fprintf(fp, "        </div>\n");
+    fprintf(fp, "        <div id=\"hudMetricsContainer\" style=\"display: flex; align-items: center; gap: 6px; flex-wrap: wrap;\"></div>\n");
     fprintf(fp, "      </div>\n");
 
     /* Canvas */
@@ -358,7 +389,77 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    let chartInstance = null;\n");
     fprintf(fp, "    let rangeStart = 0;\n");
     fprintf(fp, "    let rangeEnd = rawData.length - 1;\n");
-    fprintf(fp, "    let scaleMode = 'auto';\n\n");
+    fprintf(fp, "    let scaleMode = 'auto';\n");
+    fprintf(fp, "    let cursorEnabled = true;\n");
+    fprintf(fp, "    let cursorIdx = null;\n");
+    fprintf(fp, "    let isPinned = false;\n\n");
+
+    fprintf(fp, "    const legendSpacingPlugin = {\n");
+    fprintf(fp, "      id: 'legendSpacingPlugin',\n");
+    fprintf(fp, "      beforeInit(chart) {\n");
+    fprintf(fp, "        if (!chart.legend) return;\n");
+    fprintf(fp, "        const origFit = chart.legend.fit;\n");
+    fprintf(fp, "        chart.legend.fit = function() {\n");
+    fprintf(fp, "          origFit.bind(chart.legend)();\n");
+    fprintf(fp, "          this.height += 36;\n");
+    fprintf(fp, "        };\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "    };\n\n");
+
+    fprintf(fp, "    const verticalCursorPlugin = {\n");
+    fprintf(fp, "      id: 'verticalCursorPlugin',\n");
+    fprintf(fp, "      afterDatasetsDraw(chart) {\n");
+    fprintf(fp, "        if (!cursorEnabled) return;\n");
+    fprintf(fp, "        const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
+    fprintf(fp, "        if (!filtered.length) return;\n");
+    fprintf(fp, "        if (cursorIdx === null || cursorIdx >= filtered.length) cursorIdx = Math.floor(filtered.length / 2);\n");
+    fprintf(fp, "        const meta = chart.getDatasetMeta(0);\n");
+    fprintf(fp, "        if (!meta || !meta.data || !meta.data[cursorIdx]) return;\n");
+    fprintf(fp, "        const pt = meta.data[cursorIdx];\n");
+    fprintf(fp, "        const x = pt.x;\n");
+    fprintf(fp, "        const { top, bottom } = chart.chartArea;\n");
+    fprintf(fp, "        const ctx = chart.ctx;\n");
+    fprintf(fp, "        ctx.save();\n");
+    fprintf(fp, "        ctx.beginPath();\n");
+    fprintf(fp, "        ctx.setLineDash([4, 3]);\n");
+    fprintf(fp, "        ctx.lineWidth = isPinned ? 2.5 : 2;\n");
+    fprintf(fp, "        ctx.strokeStyle = isPinned ? '#f59e0b' : '#818cf8';\n");
+    fprintf(fp, "        ctx.moveTo(x, top - 6);\n");
+    fprintf(fp, "        ctx.lineTo(x, bottom);\n");
+    fprintf(fp, "        ctx.stroke();\n");
+    fprintf(fp, "        const xKey = document.getElementById('selectX').value;\n");
+    fprintf(fp, "        const xLabel = xKey === '_index' ? `#${filtered[cursorIdx]._idx}` : filtered[cursorIdx].x;\n");
+    fprintf(fp, "        const badgeText = isPinned ? `${xLabel} (fixo)` : xLabel;\n");
+    fprintf(fp, "        ctx.font = 'bold 11px \"JetBrains Mono\", monospace';\n");
+    fprintf(fp, "        const tw = ctx.measureText(badgeText).width;\n");
+    fprintf(fp, "        const bw = tw + 14;\n");
+    fprintf(fp, "        ctx.fillStyle = isPinned ? '#b45309' : '#4f46e5';\n");
+    fprintf(fp, "        ctx.fillRect(x - bw / 2, top - 25, bw, 20);\n");
+    fprintf(fp, "        ctx.strokeStyle = isPinned ? '#f59e0b' : '#818cf8';\n");
+    fprintf(fp, "        ctx.lineWidth = 1;\n");
+    fprintf(fp, "        ctx.strokeRect(x - bw / 2, top - 25, bw, 20);\n");
+    fprintf(fp, "        ctx.fillStyle = '#ffffff';\n");
+    fprintf(fp, "        ctx.textAlign = 'center';\n");
+    fprintf(fp, "        ctx.textBaseline = 'middle';\n");
+    fprintf(fp, "        ctx.fillText(badgeText, x, top - 15);\n");
+    fprintf(fp, "        chart.data.datasets.forEach((ds, dsIdx) => {\n");
+    fprintf(fp, "          const dsMeta = chart.getDatasetMeta(dsIdx);\n");
+    fprintf(fp, "          if (dsMeta && dsMeta.data && dsMeta.data[cursorIdx]) {\n");
+    fprintf(fp, "            const p = dsMeta.data[cursorIdx];\n");
+    fprintf(fp, "            if (p && typeof p.y === 'number' && !isNaN(p.y)) {\n");
+    fprintf(fp, "              ctx.beginPath();\n");
+    fprintf(fp, "              ctx.arc(x, p.y, isPinned ? 5.5 : 4.5, 0, Math.PI * 2);\n");
+    fprintf(fp, "              ctx.fillStyle = ds.borderColor || '#ffffff';\n");
+    fprintf(fp, "              ctx.fill();\n");
+    fprintf(fp, "              ctx.lineWidth = 2;\n");
+    fprintf(fp, "              ctx.strokeStyle = '#0f172a';\n");
+    fprintf(fp, "              ctx.stroke();\n");
+    fprintf(fp, "            }\n");
+    fprintf(fp, "          }\n");
+    fprintf(fp, "        });\n");
+    fprintf(fp, "        ctx.restore();\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "    };\n\n");
 
     fprintf(fp, "    function updateChart() {\n");
     fprintf(fp, "      const xKey = document.getElementById('selectX').value;\n");
@@ -391,9 +492,21 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          if (axis === 'y1') hasRightAxis = true;\n");
     fprintf(fp, "          const isStepped = (chartType === 'stepped');\n");
     fprintf(fp, "          const isArea = (chartType === 'area');\n");
+    fprintf(fp, "          const isHold = document.getElementById('chkHold') ? document.getElementById('chkHold').checked : true;\n");
+    fprintf(fp, "          let lastVal = null;\n");
+    fprintf(fp, "          const firstValid = filtered.find(r => r[key] !== undefined && r[key] !== null && !isNaN(Number(r[key])));\n");
+    fprintf(fp, "          if (firstValid) lastVal = Number(firstValid[key]);\n");
+    fprintf(fp, "          const seriesData = filtered.map(r => {\n");
+    fprintf(fp, "            const v = r[key];\n");
+    fprintf(fp, "            if (v !== undefined && v !== null && !isNaN(Number(v))) {\n");
+    fprintf(fp, "              lastVal = Number(v);\n");
+    fprintf(fp, "              return lastVal;\n");
+    fprintf(fp, "            }\n");
+    fprintf(fp, "            return isHold ? lastVal : null;\n");
+    fprintf(fp, "          });\n");
     fprintf(fp, "          datasets.push({\n");
     fprintf(fp, "            label: key,\n");
-    fprintf(fp, "            data: filtered.map(r => r[key]),\n");
+    fprintf(fp, "            data: seriesData,\n");
     fprintf(fp, "            borderColor: cfg.color,\n");
     fprintf(fp, "            backgroundColor: (isArea ? cfg.color + '33' : (chartType === 'bar' ? cfg.color + '99' : cfg.color)),\n");
     fprintf(fp, "            borderWidth: 2.2,\n");
@@ -416,9 +529,25 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      chartInstance = new Chart(ctx, {\n");
     fprintf(fp, "        type: chartType === 'bar' ? 'bar' : 'line',\n");
     fprintf(fp, "        data: { labels, datasets },\n");
+    fprintf(fp, "        plugins: [verticalCursorPlugin, legendSpacingPlugin],\n");
     fprintf(fp, "        options: {\n");
     fprintf(fp, "          responsive: true,\n");
     fprintf(fp, "          maintainAspectRatio: false,\n");
+    fprintf(fp, "          onHover: (evt, active) => {\n");
+    fprintf(fp, "            if (!cursorEnabled || isPinned) return;\n");
+    fprintf(fp, "            if (active && active.length > 0) {\n");
+    fprintf(fp, "              cursorIdx = active[0].index;\n");
+    fprintf(fp, "              updateCursorHud();\n");
+    fprintf(fp, "              chartInstance.draw();\n");
+    fprintf(fp, "            }\n");
+    fprintf(fp, "          },\n");
+    fprintf(fp, "          onClick: (evt, active) => {\n");
+    fprintf(fp, "            if (!cursorEnabled) return;\n");
+    fprintf(fp, "            if (active && active.length > 0) {\n");
+    fprintf(fp, "              cursorIdx = active[0].index;\n");
+    fprintf(fp, "              togglePinCursor();\n");
+    fprintf(fp, "            }\n");
+    fprintf(fp, "          },\n");
     fprintf(fp, "          plugins: {\n");
     fprintf(fp, "            legend: { position: 'top', align: 'end', labels: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 }, usePointStyle: true, boxWidth: 10 } }\n");
     fprintf(fp, "          },\n");
@@ -429,6 +558,81 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          }\n");
     fprintf(fp, "        }\n");
     fprintf(fp, "      });\n");
+    fprintf(fp, "      updateCursorHud();\n");
+    fprintf(fp, "    }\n\n");
+    fprintf(fp, "    function toggleCursor() {\n");
+    fprintf(fp, "      cursorEnabled = !cursorEnabled;\n");
+    fprintf(fp, "      const b = document.getElementById('btnCursor');\n");
+    fprintf(fp, "      if (b) b.classList.toggle('active', cursorEnabled);\n");
+    fprintf(fp, "      const chk = document.getElementById('chkCursor');\n");
+    fprintf(fp, "      if (chk) chk.checked = cursorEnabled;\n");
+    fprintf(fp, "      const hud = document.getElementById('cursorHud');\n");
+    fprintf(fp, "      if (hud) hud.style.display = cursorEnabled ? 'flex' : 'none';\n");
+    fprintf(fp, "      if (chartInstance) chartInstance.draw();\n");
+    fprintf(fp, "    }\n\n");
+    fprintf(fp, "    function togglePinCursor() {\n");
+    fprintf(fp, "      isPinned = !isPinned;\n");
+    fprintf(fp, "      const b = document.getElementById('btnPinCursor');\n");
+    fprintf(fp, "      if (b) {\n");
+    fprintf(fp, "        b.classList.toggle('active', isPinned);\n");
+    fprintf(fp, "        b.innerHTML = isPinned ? '&#128204; Fixado (Clique p/ liberar)' : '&#128204; Fixar Cursor';\n");
+    fprintf(fp, "        b.style.background = isPinned ? '#451a03' : '#1e293b';\n");
+    fprintf(fp, "        b.style.color = isPinned ? '#f59e0b' : '#cbd5e1';\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "      if (chartInstance) chartInstance.draw();\n");
+    fprintf(fp, "    }\n\n");
+    fprintf(fp, "    function stepCursor(delta) {\n");
+    fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
+    fprintf(fp, "      if (cursorIdx === null) cursorIdx = 0;\n");
+    fprintf(fp, "      cursorIdx = Math.max(0, Math.min(filtered.length - 1, cursorIdx + delta));\n");
+    fprintf(fp, "      updateCursorHud();\n");
+    fprintf(fp, "      if (chartInstance) chartInstance.draw();\n");
+    fprintf(fp, "    }\n\n");
+    fprintf(fp, "    function getEffectiveVal(key, idx) {\n");
+    fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
+    fprintf(fp, "      if (idx < 0 || idx >= filtered.length) return { val: null, isHeld: false };\n");
+    fprintf(fp, "      const direct = filtered[idx][key];\n");
+    fprintf(fp, "      if (direct !== undefined && direct !== null && !isNaN(Number(direct))) return { val: Number(direct), isHeld: false };\n");
+    fprintf(fp, "      const isHold = document.getElementById('chkHold') ? document.getElementById('chkHold').checked : true;\n");
+    fprintf(fp, "      if (!isHold) return { val: null, isHeld: false };\n");
+    fprintf(fp, "      for (let k = idx - 1; k >= 0; k--) {\n");
+    fprintf(fp, "        const v = filtered[k][key];\n");
+    fprintf(fp, "        if (v !== undefined && v !== null && !isNaN(Number(v))) return { val: Number(v), isHeld: true };\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "      for (let k = rangeStart - 1; k >= 0; k--) {\n");
+    fprintf(fp, "        const v = rawData[k][key];\n");
+    fprintf(fp, "        if (v !== undefined && v !== null && !isNaN(Number(v))) return { val: Number(v), isHeld: true };\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "      return { val: null, isHeld: false };\n");
+    fprintf(fp, "    }\n\n");
+
+    fprintf(fp, "    function updateCursorHud() {\n");
+    fprintf(fp, "      if (!cursorEnabled) return;\n");
+    fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
+    fprintf(fp, "      if (!filtered.length) return;\n");
+    fprintf(fp, "      if (cursorIdx === null || cursorIdx >= filtered.length) cursorIdx = Math.floor(filtered.length / 2);\n");
+    fprintf(fp, "      const row = filtered[cursorIdx];\n");
+    fprintf(fp, "      const xKey = document.getElementById('selectX').value;\n");
+    fprintf(fp, "      const xLabel = xKey === '_index' ? `#${row._idx}` : row.x;\n");
+    fprintf(fp, "      const lblEl = document.getElementById('hudSampleLabel');\n");
+    fprintf(fp, "      if (lblEl) lblEl.innerText = xLabel;\n");
+    fprintf(fp, "      const idxEl = document.getElementById('hudSampleIdx');\n");
+    fprintf(fp, "      if (idxEl) idxEl.innerText = `(${rangeStart + cursorIdx + 1}/${rawData.length})`;\n");
+    fprintf(fp, "      const container = document.getElementById('hudMetricsContainer');\n");
+    fprintf(fp, "      if (!container) return;\n");
+    fprintf(fp, "      container.innerHTML = '';\n");
+    fprintf(fp, "      for (const [key, cfg] of Object.entries(metricMeta)) {\n");
+    fprintf(fp, "        const chk = document.getElementById('chk_' + key);\n");
+    fprintf(fp, "        if (chk && chk.checked) {\n");
+    fprintf(fp, "          const eff = getEffectiveVal(key, cursorIdx);\n");
+    fprintf(fp, "          const valFormatted = eff.val !== null ? eff.val.toFixed(2) : 'N/D';\n");
+    fprintf(fp, "          const holdTag = eff.isHeld ? ' <span style=\"font-size:8px;color:#818cf8;border:1px solid #4338ca;padding:0 3px;border-radius:3px;\">hold</span>' : '';\n");
+    fprintf(fp, "          const badge = document.createElement('div');\n");
+    fprintf(fp, "          badge.style = 'display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #1e293b;padding:3px 8px;border-radius:6px;';\n");
+    fprintf(fp, "          badge.innerHTML = `<span style=\"width:8px;height:8px;border-radius:50%%;background:${cfg.color};display:inline-block;\"></span><span style=\"color:#94a3b8;font-family:\\'JetBrains Mono\\';font-size:10px;\">${key}:</span><strong style=\"color:#fff;font-family:\\'JetBrains Mono\\';\">${valFormatted}</strong>${holdTag}`;\n");
+    fprintf(fp, "          container.appendChild(badge);\n");
+    fprintf(fp, "        }\n");
+    fprintf(fp, "      }\n");
     fprintf(fp, "    }\n\n");
 
     /* Funções de controle */
@@ -447,19 +651,52 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      });\n");
     fprintf(fp, "      updateChart();\n");
     fprintf(fp, "    }\n");
+    fprintf(fp, "    let sortSelectedFirst = true;\n");
+    fprintf(fp, "    function toggleSortMode() {\n");
+    fprintf(fp, "      sortSelectedFirst = !sortSelectedFirst;\n");
+    fprintf(fp, "      const b = document.getElementById('btnSortMode');\n");
+    fprintf(fp, "      if (b) {\n");
+    fprintf(fp, "        b.classList.toggle('active', sortSelectedFirst);\n");
+    fprintf(fp, "        b.innerHTML = sortSelectedFirst ? '&#8645; Selecionados 1º' : '&#8645; A-Z Geral';\n");
+    fprintf(fp, "      }\n");
+    fprintf(fp, "      sortMetricsList();\n");
+    fprintf(fp, "    }\n\n");
     fprintf(fp, "    function sortMetricsList() {\n");
     fprintf(fp, "      const list = document.getElementById('metricList');\n");
     fprintf(fp, "      if (!list) return;\n");
-    fprintf(fp, "      const items = Array.from(list.children);\n");
+    fprintf(fp, "      const oldDivs = list.querySelectorAll('.section-divider');\n");
+    fprintf(fp, "      oldDivs.forEach(d => d.remove());\n");
+    fprintf(fp, "      const items = Array.from(list.children).filter(el => el.classList.contains('metric-item'));\n");
     fprintf(fp, "      items.sort((a, b) => {\n");
     fprintf(fp, "        const aKey = a.getAttribute('data-key') || '';\n");
     fprintf(fp, "        const bKey = b.getAttribute('data-key') || '';\n");
-    fprintf(fp, "        const aSel = document.getElementById('chk_' + aKey)?.checked ? 1 : 0;\n");
-    fprintf(fp, "        const bSel = document.getElementById('chk_' + bKey)?.checked ? 1 : 0;\n");
-    fprintf(fp, "        if (aSel !== bSel) return bSel - aSel;\n");
+    fprintf(fp, "        if (sortSelectedFirst) {\n");
+    fprintf(fp, "          const aChk = a.querySelector('input[type=\"checkbox\"]');\n");
+    fprintf(fp, "          const bChk = b.querySelector('input[type=\"checkbox\"]');\n");
+    fprintf(fp, "          const aSel = (aChk && aChk.checked) ? 1 : 0;\n");
+    fprintf(fp, "          const bSel = (bChk && bChk.checked) ? 1 : 0;\n");
+    fprintf(fp, "          if (aSel !== bSel) return bSel - aSel;\n");
+    fprintf(fp, "        }\n");
     fprintf(fp, "        return aKey.localeCompare(bKey, undefined, { numeric: true });\n");
     fprintf(fp, "      });\n");
-    fprintf(fp, "      items.forEach(el => list.appendChild(el));\n");
+    fprintf(fp, "      list.innerHTML = '';\n");
+    fprintf(fp, "      let dividerInserted = false;\n");
+    fprintf(fp, "      const selectedCount = items.filter(el => {\n");
+    fprintf(fp, "        const chk = el.querySelector('input[type=\"checkbox\"]');\n");
+    fprintf(fp, "        return chk && chk.checked;\n");
+    fprintf(fp, "      }).length;\n");
+    fprintf(fp, "      items.forEach((el) => {\n");
+    fprintf(fp, "        const chk = el.querySelector('input[type=\"checkbox\"]');\n");
+    fprintf(fp, "        const isChecked = chk && chk.checked;\n");
+    fprintf(fp, "        if (sortSelectedFirst && !isChecked && !dividerInserted && selectedCount > 0 && selectedCount < items.length) {\n");
+    fprintf(fp, "          const div = document.createElement('div');\n");
+    fprintf(fp, "          div.className = 'section-divider';\n");
+    fprintf(fp, "          div.innerHTML = `<span>Outros Sinais (${items.length - selectedCount})</span><span>Ordem A-Z</span>`;\n");
+    fprintf(fp, "          list.appendChild(div);\n");
+    fprintf(fp, "          dividerInserted = true;\n");
+    fprintf(fp, "        }\n");
+    fprintf(fp, "        list.appendChild(el);\n");
+    fprintf(fp, "      });\n");
     fprintf(fp, "    }\n\n");
     fprintf(fp, "    function toggleMetric(key) {\n");
     fprintf(fp, "      const chk = document.getElementById('chk_' + key);\n");
@@ -505,6 +742,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     fprintf(fp, "    function filterMetricsList() {\n");
     fprintf(fp, "      const q = document.getElementById('txtFilter').value.toLowerCase();\n");
+    fprintf(fp, "      const divs = document.querySelectorAll('.section-divider');\n");
+    fprintf(fp, "      divs.forEach(d => d.style.display = q ? 'none' : 'flex');\n");
     fprintf(fp, "      for (const k in metricMeta) {\n");
     fprintf(fp, "        const el = document.getElementById('item_' + k);\n");
     fprintf(fp, "        if (el) el.style.display = k.toLowerCase().includes(q) ? 'flex' : 'none';\n");
@@ -554,12 +793,103 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    }\n");
 
     fprintf(fp, "    function downloadPNG() {\n");
-    fprintf(fp, "      if (chartInstance) {\n");
-    fprintf(fp, "        const a = document.createElement('a');\n");
-    fprintf(fp, "        a.href = chartInstance.toBase64Image();\n");
-    fprintf(fp, "        a.download = 'grafico_log.png';\n");
-    fprintf(fp, "        a.click();\n");
+    fprintf(fp, "      if (!chartInstance) return;\n");
+    fprintf(fp, "      const srcCanvas = chartInstance.canvas;\n");
+    fprintf(fp, "      const dpr = chartInstance.currentDevicePixelRatio || window.devicePixelRatio || 1;\n");
+    fprintf(fp, "      const exportCanvas = document.createElement('canvas');\n");
+    fprintf(fp, "      exportCanvas.width = srcCanvas.width;\n");
+    fprintf(fp, "      exportCanvas.height = srcCanvas.height;\n");
+    fprintf(fp, "      const ctx = exportCanvas.getContext('2d');\n");
+    fprintf(fp, "      if (!ctx) return;\n");
+    fprintf(fp, "      ctx.fillStyle = '#090d16';\n");
+    fprintf(fp, "      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);\n");
+    fprintf(fp, "      ctx.drawImage(srcCanvas, 0, 0);\n");
+    fprintf(fp, "      if (cursorEnabled && cursorIdx !== null && chartInstance.chartArea) {\n");
+    fprintf(fp, "        ctx.save();\n");
+    fprintf(fp, "        ctx.scale(dpr, dpr);\n");
+    fprintf(fp, "        const { left, right, top, bottom } = chartInstance.chartArea;\n");
+    fprintf(fp, "        const meta0 = chartInstance.getDatasetMeta(0);\n");
+    fprintf(fp, "        if (meta0 && meta0.data && meta0.data[cursorIdx]) {\n");
+    fprintf(fp, "          const x = meta0.data[cursorIdx].x;\n");
+    fprintf(fp, "          ctx.beginPath();\n");
+    fprintf(fp, "          ctx.setLineDash([5, 4]);\n");
+    fprintf(fp, "          ctx.lineWidth = isPinned ? 2.5 : 2;\n");
+    fprintf(fp, "          ctx.strokeStyle = isPinned ? '#f59e0b' : '#818cf8';\n");
+    fprintf(fp, "          ctx.moveTo(x, top - 6);\n");
+    fprintf(fp, "          ctx.lineTo(x, bottom);\n");
+    fprintf(fp, "          ctx.stroke();\n");
+    fprintf(fp, "          ctx.setLineDash([]);\n");
+    fprintf(fp, "          const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
+    fprintf(fp, "          const xKey = document.getElementById('selectX').value;\n");
+    fprintf(fp, "          const xLabel = xKey === '_index' ? `#${filtered[cursorIdx]._idx}` : filtered[cursorIdx].x;\n");
+    fprintf(fp, "          const badgeText = isPinned ? `${xLabel} (fixo)` : xLabel;\n");
+    fprintf(fp, "          ctx.font = 'bold 11px \"JetBrains Mono\", monospace';\n");
+    fprintf(fp, "          const tw = ctx.measureText(badgeText).width;\n");
+    fprintf(fp, "          const bw = tw + 14;\n");
+    fprintf(fp, "          ctx.fillStyle = isPinned ? '#b45309' : '#4f46e5';\n");
+    fprintf(fp, "          ctx.fillRect(x - bw / 2, top - 25, bw, 20);\n");
+    fprintf(fp, "          ctx.strokeStyle = isPinned ? '#f59e0b' : '#818cf8';\n");
+    fprintf(fp, "          ctx.lineWidth = 1;\n");
+    fprintf(fp, "          ctx.strokeRect(x - bw / 2, top - 25, bw, 20);\n");
+    fprintf(fp, "          ctx.fillStyle = '#ffffff';\n");
+    fprintf(fp, "          ctx.textAlign = 'center';\n");
+    fprintf(fp, "          ctx.textBaseline = 'middle';\n");
+    fprintf(fp, "          ctx.fillText(badgeText, x, top - 15);\n");
+    fprintf(fp, "          const activeMetrics = [];\n");
+    fprintf(fp, "          chartInstance.data.datasets.forEach((ds, dsIdx) => {\n");
+    fprintf(fp, "            const dsMeta = chartInstance.getDatasetMeta(dsIdx);\n");
+    fprintf(fp, "            if (dsMeta && dsMeta.data && dsMeta.data[cursorIdx]) {\n");
+    fprintf(fp, "              const p = dsMeta.data[cursorIdx];\n");
+    fprintf(fp, "              if (p && typeof p.y === 'number' && !isNaN(p.y)) {\n");
+    fprintf(fp, "                ctx.beginPath();\n");
+    fprintf(fp, "                ctx.arc(x, p.y, isPinned ? 5.5 : 4.5, 0, Math.PI * 2);\n");
+    fprintf(fp, "                ctx.fillStyle = ds.borderColor || '#ffffff';\n");
+    fprintf(fp, "                ctx.fill();\n");
+    fprintf(fp, "                ctx.lineWidth = 2;\n");
+    fprintf(fp, "                ctx.strokeStyle = '#090d16';\n");
+    fprintf(fp, "                ctx.stroke();\n");
+    fprintf(fp, "              }\n");
+    fprintf(fp, "              const eff = getEffectiveVal(ds.label, cursorIdx);\n");
+    fprintf(fp, "              activeMetrics.push({ label: ds.label, color: ds.borderColor, val: eff.val !== null ? eff.val.toFixed(2) : 'N/D', isHeld: eff.isHeld });\n");
+    fprintf(fp, "            }\n");
+    fprintf(fp, "          });\n");
+    fprintf(fp, "          if (activeMetrics.length > 0) {\n");
+    fprintf(fp, "            const cardW = 180;\n");
+    fprintf(fp, "            const lineH = 18;\n");
+    fprintf(fp, "            const cardH = 24 + activeMetrics.length * lineH + 8;\n");
+    fprintf(fp, "            let cardX = (x + 16 + cardW > right - 8) ? x - cardW - 16 : x + 16;\n");
+    fprintf(fp, "            let cardY = Math.min(top + 10, bottom - cardH - 8);\n");
+    fprintf(fp, "            ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';\n");
+    fprintf(fp, "            ctx.fillRect(cardX, cardY, cardW, cardH);\n");
+    fprintf(fp, "            ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : 'rgba(99, 102, 241, 0.7)';\n");
+    fprintf(fp, "            ctx.strokeRect(cardX, cardY, cardW, cardH);\n");
+    fprintf(fp, "            ctx.textAlign = 'left';\n");
+    fprintf(fp, "            ctx.font = 'bold 11px sans-serif';\n");
+    fprintf(fp, "            ctx.fillStyle = isPinned ? '#fbbf24' : '#a5b4fc';\n");
+    fprintf(fp, "            ctx.fillText(`Amostra: ${xLabel}`, cardX + 10, cardY + 14);\n");
+    fprintf(fp, "            activeMetrics.forEach((m, mIdx) => {\n");
+    fprintf(fp, "              const itemY = cardY + 28 + mIdx * lineH;\n");
+    fprintf(fp, "              ctx.beginPath();\n");
+    fprintf(fp, "              ctx.arc(cardX + 14, itemY, 4, 0, Math.PI * 2);\n");
+    fprintf(fp, "              ctx.fillStyle = m.color;\n");
+    fprintf(fp, "              ctx.fill();\n");
+    fprintf(fp, "              ctx.font = '10px sans-serif';\n");
+    fprintf(fp, "              ctx.fillStyle = '#94a3b8';\n");
+    fprintf(fp, "              ctx.fillText(m.label, cardX + 24, itemY + 3);\n");
+    fprintf(fp, "              ctx.textAlign = 'right';\n");
+    fprintf(fp, "              ctx.font = 'bold 10px monospace';\n");
+    fprintf(fp, "              ctx.fillStyle = '#ffffff';\n");
+    fprintf(fp, "              ctx.fillText(`${m.val}${m.isHeld ? ' [H]' : ''}`, cardX + cardW - 10, itemY + 3);\n");
+    fprintf(fp, "              ctx.textAlign = 'left';\n");
+    fprintf(fp, "            });\n");
+    fprintf(fp, "          }\n");
+    fprintf(fp, "        }\n");
+    fprintf(fp, "        ctx.restore();\n");
     fprintf(fp, "      }\n");
+    fprintf(fp, "      const a = document.createElement('a');\n");
+    fprintf(fp, "      a.href = exportCanvas.toDataURL('image/png');\n");
+    fprintf(fp, "      a.download = 'grafico_log.png';\n");
+    fprintf(fp, "      a.click();\n");
     fprintf(fp, "    }\n");
 
     fprintf(fp, "    function toggleFS() {\n");
@@ -609,6 +939,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            const itm = document.createElement('div');\n");
     fprintf(fp, "            itm.className = 'metric-item' + (idx < 3 ? ' selected' : '');\n");
     fprintf(fp, "            itm.id = 'item_' + k;\n");
+    fprintf(fp, "            itm.setAttribute('data-key', k);\n");
     fprintf(fp, "            itm.innerHTML = `<label style=\"display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;\"><input type=\"checkbox\" id=\"chk_${k}\" ${idx < 3 ? 'checked' : ''} onchange=\"toggleMetric('${k}')\" style=\"accent-color:#4f46e5;\"><span class=\"dot\" style=\"background:${col}\"></span><div style=\"font-size:12px;font-weight:600;font-family:'JetBrains Mono';\">${k}</div></label><button class=\"axis-badge ${idx === 1 ? 'right' : ''}\" id=\"axis_${k}\" onclick=\"toggleAxis('${k}')\">${idx === 1 ? 'Eixo Dir (Y1)' : 'Eixo Esq (Y)'}</button>`;\n");
     fprintf(fp, "            listEl.appendChild(itm);\n");
     fprintf(fp, "          });\n");
@@ -654,8 +985,23 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (argc == 1) {
+        FILE *fcan = fopen("sample_can_bus.json", "rb");
+        if (fcan) {
+            fclose(fcan);
+            input_filename = "sample_can_bus.json";
+        } else {
+            FILE *flog = fopen("LOG_99fc1f91.json", "rb");
+            if (flog) {
+                fclose(flog);
+                input_filename = "LOG_99fc1f91.json";
+            }
+        }
+    }
+
     printf("========================================================\n");
-    printf("   LogPlotter em Linguagem C (ANSI C99) - Windows 11\n");
+    printf("   LogPlotter C v2.2 (ANSI C99) - Windows 11 / Linux\n");
+    printf("   [NOVO] Telemetria CAN Bus & Sinais Ativos no Topo\n");
     printf("========================================================\n");
     printf("[INFO] Arquivo: %s\n", input_filename);
 
@@ -817,6 +1163,16 @@ int main(int argc, char **argv) {
     for (int m = 0; m < ds.num_metrics; m++) {
         compute_metric_stats(&ds, m);
     }
+
+    printf("\n+--------------------------------+----------+----------+----------+----------+\n");
+    printf("| Sinal / Metrica CAN            |   Minimo |   Maximo |    Media | Desv.Padr|\n");
+    printf("+--------------------------------+----------+----------+----------+----------+\n");
+    for (int m = 0; m < ds.num_metrics; m++) {
+        MetricStats *st = &ds.stats[m];
+        printf("| %-30.30s | %8.2f | %8.2f | %8.2f | %8.2f |\n",
+               st->name, st->min, st->max, st->mean, st->stddev);
+    }
+    printf("+--------------------------------+----------+----------+----------+----------+\n");
 
     if (html_output) {
         export_interactive_html(&ds, html_output);
