@@ -102,8 +102,9 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
     });
   }, [filteredRecords, xAxisKey, startIdx]);
 
-  // Determine if we need right Y axis
-  const hasRightAxis = dualAxis && selectedMetrics.some(m => m.yAxis === 'y1');
+  // Determine if we need right Y axes (Y1 and Y2)
+  const hasY1Axis = dualAxis && selectedMetrics.some(m => m.yAxis === 'y1');
+  const hasY2Axis = dualAxis && selectedMetrics.some(m => m.yAxis === 'y2');
 
   // Build datasets with spanGaps and forward-fill (Sample & Hold) for sparse/interleaved telemetry
   const datasets = React.useMemo(() => {
@@ -507,8 +508,18 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
             size: 11,
           },
         },
+        title: {
+          display: hasY1Axis || hasY2Axis,
+          text: 'Eixo Y',
+          color: '#94a3b8',
+          font: {
+            family: 'JetBrains Mono',
+            size: 10,
+            weight: 'bold',
+          },
+        },
       },
-      ...(hasRightAxis
+      ...(hasY1Axis
         ? {
             y1: {
               type: yAxisScale.scaleType,
@@ -525,6 +536,48 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                 font: {
                   family: 'JetBrains Mono',
                   size: 11,
+                },
+              },
+              title: {
+                display: true,
+                text: 'Eixo Y1',
+                color: '#38bdf8',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 10,
+                  weight: 'bold',
+                },
+              },
+            },
+          }
+        : {}),
+      ...(hasY2Axis
+        ? {
+            y2: {
+              type: yAxisScale.scaleType,
+              display: true,
+              position: 'right',
+              beginAtZero: yAxisScale.beginAtZero,
+              min: yAxisScale.mode === 'manual' && yAxisScale.minY2 !== '' ? Number(yAxisScale.minY2) : undefined,
+              max: yAxisScale.mode === 'manual' && yAxisScale.maxY2 !== '' ? Number(yAxisScale.maxY2) : undefined,
+              grid: {
+                drawOnChartArea: false, // avoid overlapping grid lines
+              },
+              ticks: {
+                color: '#fbbf24',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 11,
+                },
+              },
+              title: {
+                display: true,
+                text: 'Eixo Y2',
+                color: '#fbbf24',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 10,
+                  weight: 'bold',
                 },
               },
             },
@@ -986,8 +1039,16 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                     </span>
                   )}
                   {dualAxis && (
-                    <span className={`text-[9px] font-mono px-1 rounded ${m.yAxis === 'y1' ? 'text-sky-400 bg-sky-950/60' : 'text-slate-500 bg-slate-800/60'}`}>
-                      {m.yAxis === 'y1' ? 'Y1' : 'Y'}
+                    <span
+                      className={`text-[9px] font-mono px-1 rounded border font-semibold ${
+                        m.yAxis === 'y2'
+                          ? 'text-amber-400 bg-amber-950/70 border-amber-800/70'
+                          : m.yAxis === 'y1'
+                          ? 'text-sky-400 bg-sky-950/70 border-sky-800/70'
+                          : 'text-slate-400 bg-slate-800/70 border-slate-700/70'
+                      }`}
+                    >
+                      {m.yAxis === 'y2' ? 'Y2' : m.yAxis === 'y1' ? 'Y1' : 'Y'}
                     </span>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FieldInfo, MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
+import { FieldInfo, MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID } from '../types/log';
 import { PALETTE } from '../utils/jsonParser';
 import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw, ArrowDownAZ } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface MetricSelectorProps {
   onXAxisChange: (key: string) => void;
   selectedMetrics: MetricConfig[];
   onToggleMetric: (key: string) => void;
-  onMetricAxisChange: (key: string, axis: 'y' | 'y1') => void;
+  onMetricAxisChange: (key: string, axis: AxisID) => void;
   onSelectAllNumeric: () => void;
   onClearAllMetrics: () => void;
   chartType: GlobalChartType;
@@ -257,7 +257,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
               onChange={onToggleDualAxis}
               className="accent-indigo-500 rounded"
             />
-            <span>Eixo Y duplo (L / R)</span>
+            <span>Eixos Y múltiplos (Y, Y1, Y2)</span>
           </label>
 
           {onToggleHoldSparseTelemetry && (
@@ -395,11 +395,11 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                 </div>
               </div>
 
-              {/* Se Eixo Duplo estiver ativo, limites para Y1 */}
+              {/* Se Eixo Múltiplo estiver ativo, limites para Y1 */}
               {dualAxis && (
                 <div className="pt-2 border-t border-slate-800/80 mt-1 flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-[11px] text-sky-400 font-semibold font-mono">
-                    <span>Limites do Eixo Y1 (Direito):</span>
+                    <span>Limites do Eixo Y1 (Direito 1):</span>
                     <button
                       type="button"
                       onClick={() => onYAxisScaleChange({ ...yAxisScale, minY1: '', maxY1: '' })}
@@ -428,6 +428,45 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         value={yAxisScale.maxY1}
                         onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY1: e.target.value === '' ? '' : Number(e.target.value) })}
                         className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Se Eixo Múltiplo estiver ativo, limites para Y2 */}
+              {dualAxis && (
+                <div className="pt-2 border-t border-slate-800/80 mt-1 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-amber-400 font-semibold font-mono">
+                    <span>Limites do Eixo Y2 (Direito 2):</span>
+                    <button
+                      type="button"
+                      onClick={() => onYAxisScaleChange({ ...yAxisScale, minY2: '', maxY2: '' })}
+                      className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" /> Redefinir
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Mínimo (Y2)</label>
+                      <input
+                        type="number"
+                        placeholder="Auto"
+                        value={yAxisScale.minY2}
+                        onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY2: e.target.value === '' ? '' : Number(e.target.value) })}
+                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Máximo (Y2)</label>
+                      <input
+                        type="number"
+                        placeholder="Auto"
+                        value={yAxisScale.maxY2}
+                        onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY2: e.target.value === '' ? '' : Number(e.target.value) })}
+                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
@@ -555,21 +594,47 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     </div>
                   </label>
 
-                  {/* Dual Axis assignment switch if dual axis enabled */}
+                  {/* Multi-Axis assignment selector if multi-axis enabled */}
                   {selected && dualAxis && config && (
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => onMetricAxisChange(field.key, config.yAxis === 'y' ? 'y1' : 'y')}
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
-                          config.yAxis === 'y1'
-                            ? 'bg-sky-950 text-sky-400 border-sky-800'
-                            : 'bg-slate-900 text-white border-slate-700'
-                        }`}
-                        title={config.yAxis === 'y1' ? 'Plotado no Eixo Direito (Y1)' : 'Plotado no Eixo Esquerdo (Y)'}
-                      >
-                        {config.yAxis === 'y1' ? 'Eixo Dir (Y1)' : 'Eixo Esq (Y)'}
-                      </button>
+                      <div className="flex items-center rounded bg-slate-900 border border-slate-700/80 p-0.5 text-[10px] font-mono shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => onMetricAxisChange(field.key, 'y')}
+                          className={`px-1.5 py-0.5 rounded transition-colors ${
+                            config.yAxis === 'y'
+                              ? 'bg-slate-700 text-white font-bold shadow-sm'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                          title="Plotar no Eixo Esquerdo Principal (Y)"
+                        >
+                          Y
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onMetricAxisChange(field.key, 'y1')}
+                          className={`px-1.5 py-0.5 rounded transition-colors ${
+                            config.yAxis === 'y1'
+                              ? 'bg-sky-600 text-white font-bold shadow-sm'
+                              : 'text-sky-400/80 hover:text-sky-300'
+                          }`}
+                          title="Plotar no Eixo Direito 1 (Y1)"
+                        >
+                          Y1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onMetricAxisChange(field.key, 'y2')}
+                          className={`px-1.5 py-0.5 rounded transition-colors ${
+                            config.yAxis === 'y2'
+                              ? 'bg-amber-600 text-white font-bold shadow-sm'
+                              : 'text-amber-400/80 hover:text-amber-300'
+                          }`}
+                          title="Plotar no Terceiro Eixo (Y2)"
+                        >
+                          Y2
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -99,7 +99,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
               <li><b>Leitura Dinâmica de JSON/JSONL:</b> suporte a upload de arquivos e colagem de texto com detecção automática de registros e propriedades.</li>
               <li><b>Desaninhamento Automático:</b> objetos aninhados são achatados em notação ponto (ex: <code>sensores.temperatura</code>).</li>
               <li><b>Eixo X Flexível:</b> escolha campos temporais (timestamps, horas, datas) ou numeração sequencial (<code>#</code>).</li>
-              <li><b>Eixo Y Duplo (Left / Right):</b> plote variáveis de escalas distintas sem distorcer o traçado.</li>
+              <li><b>Eixos Y Múltiplos (Y, Y1 e Y2):</b> plote variáveis em até três eixos independentes (Eixo Y esquerdo principal, Eixo Y1 direito e Eixo Y2 direito 2), permitindo comparar sinais de grandezas totalmente distintas (ex: %, hPa e °C) simultaneamente.</li>
               <li><b>Ajuste Fino da Escala Y:</b> modo automático ou manual com limites numéricos, opção de iniciar no zero (0) e escala logarítmica.</li>
               <li><b>Estilos Gráficos:</b> alterne instantaneamente entre Linha, Área, Barras e Degraus (Stepped).</li>
               <li><b>Zoom e Faixa Temporal:</b> controle deslizante com atalhos de 100%, 50%, 25% e últimos 30 pontos.</li>

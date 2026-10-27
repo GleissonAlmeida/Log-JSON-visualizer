@@ -39,9 +39,9 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 ### 📈 Gráficos Interativos (Chart.js)
 - **Eixo X Dinâmico**: selecione qualquer campo temporal ou utilize o índice sequencial numérico (`#1, #2, #3...`).
 - **Múltiplas Séries Simultâneas**: plote quantas métricas desejar com paleta de cores de alto contraste.
-- **Eixo Y Duplo (Left / Right)**: plote simultaneamente métricas de ordens de grandeza diferentes (ex.: temperatura a 25°C e pressão a 1013 hPa) sem distorção das curvas.
+- **Eixos Y Múltiplos (Y, Y1, Y2)**: plote simultaneamente métricas de ordens de grandeza distintas em até três eixos independentes (Eixo Y esquerdo, Eixo Y1 direito 1 e Eixo Y2 direito 2) sem distorção das curvas.
 - **Ajuste da Escala do Eixo Y**:
-  - Modo **Automático** ou **Manual** (com definição de valores mínimos e máximos para ambos os eixos).
+  - Modo **Automático** ou **Manual** (com definição independente de valores mínimos e máximos para os eixos Y, Y1 e Y2).
   - Opção **Iniciar no zero (0)**.
   - Opção **Escala Logarítmica** para dados com picos extremos.
 - **Estilos Gráficos**: alternância instantânea entre **Linha**, **Área preenchida**, **Barras** e **Degraus** (*Stepped lines*).

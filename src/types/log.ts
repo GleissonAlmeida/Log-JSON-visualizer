@@ -16,11 +16,13 @@ export interface FieldInfo {
   category?: string;
 }
 
+export type AxisID = 'y' | 'y1' | 'y2';
+
 export interface MetricConfig {
   key: string;
   label: string;
   color: string;
-  yAxis: 'y' | 'y1'; // 'y' is left, 'y1' is right
+  yAxis: AxisID; // 'y' is left, 'y1' is right 1, 'y2' is right 2 (terceiro eixo)
   chartType?: 'line' | 'bar';
 }
 
@@ -44,4 +46,6 @@ export interface YAxisScaleConfig {
   maxY: number | '';
   minY1: number | '';
   maxY1: number | '';
+  minY2: number | '';
+  maxY2: number | '';
 }

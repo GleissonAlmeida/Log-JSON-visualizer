@@ -167,9 +167,9 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    .range-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; align-items: center; }\n");
     fprintf(fp, "    .range-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }\n");
     fprintf(fp, "    .btn-tool { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }\n");
-    fprintf(fp, "    .btn-tool:hover { background: #334155; color: #fff; }\n");
     fprintf(fp, "    .axis-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; background: #070d19; cursor: pointer; color: #ffffff; }\n");
-    fprintf(fp, "    .axis-badge.right { color: #38bdf8; border-color: #0369a1; background: #082f49; }\n");
+    fprintf(fp, "    .axis-badge.right, .axis-badge.y1 { color: #38bdf8; border-color: #0369a1; background: #082f49; }\n");
+    fprintf(fp, "    .axis-badge.y2 { color: #fbbf24; border-color: #b45309; background: #78350f; }\n");
     fprintf(fp, "    .btn-sort { background: #070d19; border: 1px solid #1e293b; color: #94a3b8; font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono'; white-space: nowrap; transition: all 0.15s; }\n");
     fprintf(fp, "    .btn-sort.active { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }\n");
     fprintf(fp, "    .section-divider { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid #1e293b; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }\n");
@@ -222,7 +222,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            <input type=\"checkbox\" id=\"chkPoints\" checked onchange=\"updateChart()\"> Pontos no gráfico\n");
     fprintf(fp, "          </label>\n");
     fprintf(fp, "          <label class=\"toggle-label\">\n");
-    fprintf(fp, "            <input type=\"checkbox\" id=\"chkDualAxis\" checked onchange=\"updateChart()\"> Eixo Y duplo (L / R)\n");
+    fprintf(fp, "            <input type=\"checkbox\" id=\"chkDualAxis\" checked onchange=\"updateChart()\"> Eixos Y múltiplos (Y, Y1, Y2)\n");
     fprintf(fp, "          </label>\n");
     fprintf(fp, "          <label class=\"toggle-label\" style=\"grid-column: span 2; display: flex; align-items: center; justify-content: space-between;\" title=\"Zero-Order Hold: Mantém o último valor transmitido para sinais esparsos de CAN bus ou sensores assíncronos\">\n");
     fprintf(fp, "            <span style=\"display: flex; align-items: center; gap: 6px;\"><input type=\"checkbox\" id=\"chkHold\" checked onchange=\"updateChart()\"> Hold de Telemetria (CAN)</span>\n");
@@ -253,10 +253,17 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "              <input type=\"number\" id=\"inpMaxY\" placeholder=\"Máx Y\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px;\">\n");
     fprintf(fp, "            </div>\n");
     fprintf(fp, "            <div id=\"boxY1Limits\" style=\"margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;\">\n");
-    fprintf(fp, "              <div style=\"font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y1 (Direito):</div>\n");
+    fprintf(fp, "              <div style=\"font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y1 (Direito 1):</div>\n");
     fprintf(fp, "              <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
     fprintf(fp, "                <input type=\"number\" id=\"inpMinY1\" placeholder=\"Mín Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
     fprintf(fp, "                <input type=\"number\" id=\"inpMaxY1\" placeholder=\"Máx Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
+    fprintf(fp, "              </div>\n");
+    fprintf(fp, "            </div>\n");
+    fprintf(fp, "            <div id=\"boxY2Limits\" style=\"margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;\">\n");
+    fprintf(fp, "              <div style=\"font-size: 10px; color: #fbbf24; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y2 (Direito 2):</div>\n");
+    fprintf(fp, "              <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMinY2\" placeholder=\"Mín Y2\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY2\" placeholder=\"Máx Y2\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
     fprintf(fp, "              </div>\n");
     fprintf(fp, "            </div>\n");
     fprintf(fp, "          </div>\n");
@@ -285,7 +292,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
         const MetricStats *st = &ds->stats[m];
         const char *col = palette[m % num_palette];
         int is_checked = (m < 3); /* seleciona as 3 primeiras por padrão */
-        int is_right_axis = (m == 1); /* segundo campo vai para eixo direito se habilitado */
+        const char *axis_cls = (m == 1) ? "right y1" : ((m == 2) ? "y2" : "");
+        const char *axis_lbl = (m == 1) ? "Eixo Dir (Y1)" : ((m == 2) ? "Eixo Dir (Y2)" : "Eixo Esq (Y)");
 
         fprintf(fp, "          <div class=\"metric-item %s\" id=\"item_%s\" data-key=\"%s\">\n", is_checked ? "selected" : "", st->name, st->name);
         fprintf(fp, "            <label style=\"display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;\">\n");
@@ -297,7 +305,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
         fprintf(fp, "              </div>\n");
         fprintf(fp, "            </label>\n");
         fprintf(fp, "            <button class=\"axis-badge %s\" id=\"axis_%s\" onclick=\"toggleAxis('%s')\">%s</button>\n",
-                is_right_axis ? "right" : "", st->name, st->name, is_right_axis ? "Eixo Dir (Y1)" : "Eixo Esq (Y)");
+                axis_cls, st->name, st->name, axis_lbl);
         fprintf(fp, "          </div>\n");
     }
 
@@ -379,7 +387,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     for (int m = 0; m < ds->num_metrics; m++) {
         fprintf(fp, "      \"%s\": { color: \"%s\", yAxis: \"%s\", checked: %s },\n",
                 ds->metric_names[m], palette[m % num_palette],
-                (m == 1) ? "y1" : "y",
+                (m == 1) ? "y1" : ((m == 2) ? "y2" : "y"),
                 (m < 3) ? "true" : "false");
     }
     fprintf(fp, "    };\n\n");
@@ -473,6 +481,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      const maxYVal = isManual && document.getElementById('inpMaxY').value !== '' ? parseFloat(document.getElementById('inpMaxY').value) : undefined;\n");
     fprintf(fp, "      const minY1Val = isManual && document.getElementById('inpMinY1').value !== '' ? parseFloat(document.getElementById('inpMinY1').value) : undefined;\n");
     fprintf(fp, "      const maxY1Val = isManual && document.getElementById('inpMaxY1').value !== '' ? parseFloat(document.getElementById('inpMaxY1').value) : undefined;\n");
+    fprintf(fp, "      const minY2Val = isManual && document.getElementById('inpMinY2') && document.getElementById('inpMinY2').value !== '' ? parseFloat(document.getElementById('inpMinY2').value) : undefined;\n");
+    fprintf(fp, "      const maxY2Val = isManual && document.getElementById('inpMaxY2') && document.getElementById('inpMaxY2').value !== '' ? parseFloat(document.getElementById('inpMaxY2').value) : undefined;\n");
     fprintf(fp, "      document.getElementById('dispXKey').innerText = xKey === '_index' ? 'Índice sequencial' : xKey;\n\n");
 
     fprintf(fp, "      const filtered = rawData.slice(rangeStart, rangeEnd + 1);\n");
@@ -481,7 +491,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     fprintf(fp, "      const labels = filtered.map(r => xKey === '_index' ? `#${r._idx}` : r.x);\n");
     fprintf(fp, "      let selectedCount = 0;\n");
-    fprintf(fp, "      let hasRightAxis = false;\n\n");
+    fprintf(fp, "      let hasY1Axis = false;\n");
+    fprintf(fp, "      let hasY2Axis = false;\n\n");
 
     fprintf(fp, "      const datasets = [];\n");
     fprintf(fp, "      for (const [key, cfg] of Object.entries(metricMeta)) {\n");
@@ -489,7 +500,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "        if (chk && chk.checked) {\n");
     fprintf(fp, "          selectedCount++;\n");
     fprintf(fp, "          const axis = isDualAxis ? cfg.yAxis : 'y';\n");
-    fprintf(fp, "          if (axis === 'y1') hasRightAxis = true;\n");
+    fprintf(fp, "          if (axis === 'y1') hasY1Axis = true;\n");
+    fprintf(fp, "          if (axis === 'y2') hasY2Axis = true;\n");
     fprintf(fp, "          const isStepped = (chartType === 'stepped');\n");
     fprintf(fp, "          const isArea = (chartType === 'area');\n");
     fprintf(fp, "          const isHold = document.getElementById('chkHold') ? document.getElementById('chkHold').checked : true;\n");
@@ -554,7 +566,8 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          scales: {\n");
     fprintf(fp, "            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 } },\n");
     fprintf(fp, "            y: { type: scaleType, beginAtZero: beginZero, min: minYVal, max: maxYVal, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } },\n");
-    fprintf(fp, "            ...(hasRightAxis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } } } } : {})\n");
+    fprintf(fp, "            ...(hasY1Axis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y1', color: '#38bdf8' } } } : {}),\n");
+    fprintf(fp, "            ...(hasY2Axis ? { y2: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY2Val, max: maxY2Val, grid: { drawOnChartArea: false }, ticks: { color: '#fbbf24', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y2', color: '#fbbf24' } } } : {})\n");
     fprintf(fp, "          }\n");
     fprintf(fp, "        }\n");
     fprintf(fp, "      });\n");
@@ -709,11 +722,15 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      const btn = document.getElementById('axis_' + key);\n");
     fprintf(fp, "      if (metricMeta[key].yAxis === 'y') {\n");
     fprintf(fp, "        metricMeta[key].yAxis = 'y1';\n");
-    fprintf(fp, "        btn.classList.add('right');\n");
+    fprintf(fp, "        btn.className = 'axis-badge right y1';\n");
     fprintf(fp, "        btn.innerText = 'Eixo Dir (Y1)';\n");
+    fprintf(fp, "      } else if (metricMeta[key].yAxis === 'y1') {\n");
+    fprintf(fp, "        metricMeta[key].yAxis = 'y2';\n");
+    fprintf(fp, "        btn.className = 'axis-badge y2';\n");
+    fprintf(fp, "        btn.innerText = 'Eixo Dir (Y2)';\n");
     fprintf(fp, "      } else {\n");
     fprintf(fp, "        metricMeta[key].yAxis = 'y';\n");
-    fprintf(fp, "        btn.classList.remove('right');\n");
+    fprintf(fp, "        btn.className = 'axis-badge';\n");
     fprintf(fp, "        btn.innerText = 'Eixo Esq (Y)';\n");
     fprintf(fp, "      }\n");
     fprintf(fp, "      updateChart();\n");

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseJsonLog, PALETTE } from './utils/jsonParser';
 import { SAMPLE_DATASETS } from './data/sampleDatasets';
-import { MetricConfig, GlobalChartType, YAxisScaleConfig } from './types/log';
+import { MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID } from './types/log';
 import { ChartViewer } from './components/ChartViewer';
 import { MetricSelector } from './components/MetricSelector';
 import { JsonInputModal } from './components/JsonInputModal';
@@ -27,12 +27,12 @@ export default function App() {
   // Chart configuration state
   const [xAxisKey, setXAxisKey] = useState<string>(parseResult.detectedXKey);
   const [selectedMetrics, setSelectedMetrics] = useState<MetricConfig[]>(() => {
-    // Select first 3 metrics with second assigned to Y1 as in screenshot
+    // Select first 3 metrics with second assigned to Y1 and third assigned to Y2
     return parseResult.detectedYKeys.map((key, i) => ({
       key,
       label: key,
       color: PALETTE[i % PALETTE.length],
-      yAxis: i === 1 ? 'y1' : 'y',
+      yAxis: i === 1 ? 'y1' : (i === 2 ? 'y2' : 'y'),
     }));
   });
 
@@ -53,6 +53,8 @@ export default function App() {
     maxY: '',
     minY1: '',
     maxY1: '',
+    minY2: '',
+    maxY2: '',
   });
 
   // Range window slider [start, end]
@@ -87,7 +89,7 @@ export default function App() {
         key,
         label: key,
         color: PALETTE[i % PALETTE.length],
-        yAxis: i === 1 ? 'y1' : 'y',
+        yAxis: i === 1 ? 'y1' : (i === 2 ? 'y2' : 'y'),
       }));
       setSelectedMetrics(newMetrics);
     } catch (err: any) {
@@ -103,13 +105,21 @@ export default function App() {
         return prev.filter((m) => m.key !== key);
       } else {
         const nextColor = PALETTE[prev.length % PALETTE.length];
+        const nextAxis: AxisID =
+          !dualAxis
+            ? 'y'
+            : prev.length % 3 === 1
+            ? 'y1'
+            : prev.length % 3 === 2
+            ? 'y2'
+            : 'y';
         return [
           ...prev,
           {
             key,
             label: key,
             color: nextColor,
-            yAxis: prev.length >= 1 && dualAxis ? 'y1' : 'y',
+            yAxis: nextAxis,
           },
         ];
       }
@@ -117,7 +127,7 @@ export default function App() {
   };
 
   // Change axis assignment
-  const handleMetricAxisChange = (key: string, axis: 'y' | 'y1') => {
+  const handleMetricAxisChange = (key: string, axis: AxisID) => {
     setSelectedMetrics((prev) =>
       prev.map((m) => (m.key === key ? { ...m, yAxis: axis } : m))
     );
@@ -129,7 +139,7 @@ export default function App() {
       key: f.key,
       label: f.key,
       color: PALETTE[i % PALETTE.length],
-      yAxis: i % 2 === 1 ? 'y1' : 'y',
+      yAxis: i % 3 === 1 ? 'y1' : (i % 3 === 2 ? 'y2' : 'y'),
     }));
     setSelectedMetrics(all);
   };
