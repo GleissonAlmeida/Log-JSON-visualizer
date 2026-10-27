@@ -1046,8 +1046,7 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
             len--;
         }
         if (len > 0) {
-            strncpy(headers[num_cols], tok, MAX_LABEL_LEN - 1);
-            headers[num_cols][MAX_LABEL_LEN - 1] = '\0';
+            snprintf(headers[num_cols], MAX_LABEL_LEN, "%s", tok);
         } else {
             snprintf(headers[num_cols], MAX_LABEL_LEN, "col_%d", num_cols + 1);
         }
@@ -1067,7 +1066,7 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
         for (int c = 0; c < num_cols; c++) {
             if (strcmp(headers[c], x_key_param) == 0) {
                 x_col_idx = c;
-                strncpy(ds->x_key, headers[c], sizeof(ds->x_key) - 1);
+                snprintf(ds->x_key, sizeof(ds->x_key), "%s", headers[c]);
                 break;
             }
         }
@@ -1079,14 +1078,14 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
             for (int c = 0; c < num_cols; c++) {
                 if (ci_streq(headers[c], candidates[cd])) {
                     x_col_idx = c;
-                    strncpy(ds->x_key, headers[c], sizeof(ds->x_key) - 1);
+                    snprintf(ds->x_key, sizeof(ds->x_key), "%s", headers[c]);
                     break;
                 }
             }
             if (x_col_idx >= 0) break;
         }
         if (x_col_idx < 0) {
-            strncpy(ds->x_key, "_index", sizeof(ds->x_key) - 1);
+            snprintf(ds->x_key, sizeof(ds->x_key), "%s", "_index");
         }
     }
 
@@ -1098,7 +1097,7 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
             if (c == x_col_idx) continue;
             if (strcmp(headers[c], "#") == 0 || strcmp(headers[c], "_index") == 0) continue;
             metric_col_indices[ds->num_metrics] = c;
-            strncpy(ds->metric_names[ds->num_metrics], headers[c], MAX_LABEL_LEN - 1);
+            snprintf(ds->metric_names[ds->num_metrics], sizeof(ds->metric_names[0]), "%s", headers[c]);
             ds->num_metrics++;
         }
     } else {
@@ -1106,7 +1105,7 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
             for (int c = 0; c < num_cols; c++) {
                 if (strcmp(headers[c], requested_metrics[m]) == 0) {
                     metric_col_indices[ds->num_metrics] = c;
-                    strncpy(ds->metric_names[ds->num_metrics], headers[c], MAX_LABEL_LEN - 1);
+                    snprintf(ds->metric_names[ds->num_metrics], sizeof(ds->metric_names[0]), "%s", headers[c]);
                     ds->num_metrics++;
                     break;
                 }
@@ -1159,15 +1158,13 @@ static int load_csv_dataset(const char *content, Dataset *ds, const char *x_key_
             }
 
             if (col == x_col_idx && clen > 0) {
-                strncpy(dp->x_label, cell, sizeof(dp->x_label) - 1);
-                dp->x_label[sizeof(dp->x_label) - 1] = '\0';
+                snprintf(dp->x_label, sizeof(dp->x_label), "%s", cell);
             }
 
             for (int m = 0; m < ds->num_metrics; m++) {
                 if (metric_col_indices[m] == col && clen > 0) {
                     char num_buf[64];
-                    strncpy(num_buf, cell, sizeof(num_buf) - 1);
-                    num_buf[sizeof(num_buf) - 1] = '\0';
+                    snprintf(num_buf, sizeof(num_buf), "%s", cell);
                     char *cp = strchr(num_buf, ',');
                     if (cp) *cp = '.';
                     char *end_ptr = NULL;
