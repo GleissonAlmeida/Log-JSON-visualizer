@@ -20,9 +20,16 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) grafico_c.html grafico_c.dat grafico_c.gp
+	rm -f $(OBJS) $(TARGET) $(TARGET).exe grafico_c.html grafico_c.dat grafico_c.gp
 
 run: $(TARGET)
 	./$(TARGET) sample_iot.json
 
-.PHONY: all clean run
+windows:
+	x86_64-w64-mingw32-gcc -Wall -Wextra -O2 -std=c99 -static main.c json_parser.c -lm -o log_plotter.exe
+	@echo "=================================================="
+	@echo "Compilacao Windows 64-bit concluida com sucesso!"
+	@echo "Executavel gerado: log_plotter.exe"
+	@echo "=================================================="
+
+.PHONY: all clean run windows

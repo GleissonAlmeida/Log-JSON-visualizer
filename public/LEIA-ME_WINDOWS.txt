@@ -1,23 +1,31 @@
 ========================================================================
-   LOGPLOTTER EM LINGUAGEM C (v2.5) - PACOTE EXECUTÁVEL PARA WINDOWS 11
+   LOGPLOTTER EM LINGUAGEM C (v2.6) - PACOTE EXECUTÁVEL PARA WINDOWS 11
 ========================================================================
 
 Este pacote contém o executável binário compilado nativamente para Windows 11 / Windows 10 (x86-64),
 estaticamente vinculado (-static), sem necessidade de instalar DLLs externas, compilador, Python ou Node.js.
 
-NOVIDADES DA VERSÃO 2.5:
+NOVIDADES DA VERSÃO 2.6:
 -------------------------
-1. [NOVO] Suporte Completo à Leitura de Arquivos CSV (.csv):
-   - Lê arquivos CSV com detecção automática de separadores (vírgula ',', ponto-e-vírgula ';' e tabulação '\t').
+1. Três Eixos Y Independentes (Y, Y1 e Y2):
+   - Suporte a plotagem simultânea em até três escalas verticais distintas:
+     * Eixo Y: Esquerdo principal (em cinza/slate)
+     * Eixo Y1: Direito 1 (em azul celeste #38bdf8)
+     * Eixo Y2: Direito 2 (em âmbar/ouro #fbbf24)
+   - Controles independentes de limites manuais (Mín e Máx) para os eixos Y, Y1 e Y2 no painel lateral.
+2. Alternância Instantânea e Fluida de Estilo Gráfico:
+   - Alternador direto entre Linha, Área preenchida, Barras e Degraus (Stepped), sem bloqueios ao retornar para Linha.
+3. Leitura Completa de Arquivos CSV (.csv) e JSON/JSONL:
+   - Lê arquivos CSV com detecção automática de separadores (vírgula ',', ponto-e-vírgula ';', tabulação '\t' e pipe '|').
    - Suporta números decimais com vírgula (padrão brasileiro/europeu, ex: 12,50).
    - O executável C aceita arquivos .csv diretamente pela linha de comando ou arrastando o arquivo para cima do .exe.
-2. Exportação para PNG com Cursor e Valores das Amostras:
-   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gerada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os pontos marcadores em cada curva e o cartão flutuante de inspeção.
-3. Hold de Telemetria (Sample & Hold) no Cursor e HUD:
+4. Exportação para PNG com Cursor e Valores das Amostras:
+   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gravada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os marcadores em cada curva e o cartão flutuante de inspeção com valores numéricos e badges de eixo.
+5. Hold de Telemetria (Sample & Hold) no Cursor e HUD:
    - Mantém o último valor válido recebido para sinais esparsos de CAN bus, exibindo o status [hold].
-4. Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
+6. Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
    - Margem de respiro de 36px abaixo da legenda dos sinais, eliminando qualquer sobreposição com o cursor.
-5. Cursor Eixo X Totalmente Reativo com Navegação por Mouse e Teclado.
+7. Cursor Eixo X Totalmente Reativo com Navegação por Mouse e Teclado.
 
 CONTEÚDO DO PACOTE:
 --------------------

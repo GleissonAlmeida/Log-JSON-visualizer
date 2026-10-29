@@ -76,7 +76,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, 
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs CSV &amp; JSON (v2.5)</h1>
+            <h1 className="text-2xl font-bold text-slate-100 mb-2">📊 LogPlotter C &bull; Visualizador de Logs CSV &amp; JSON (v2.6)</h1>
             <p className="text-slate-400">
               Leitor de logs e telemetria de alta performance e plotador gráfico interativo desenvolvido em <b>Linguagem C (ANSI C99)</b> com geração dinâmica de gráficos em <b>Chart.js</b> e executável nativo para <b>Windows 11 (64-bit)</b>.
             </p>

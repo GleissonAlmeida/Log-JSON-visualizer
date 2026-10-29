@@ -12,6 +12,7 @@ import {
   Download,
   Package,
   BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function App() {
@@ -172,7 +173,7 @@ export default function App() {
               LogPlotter <span className="text-indigo-400 font-mono font-normal">Windows 11 (.EXE)</span>
             </span>
             <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-700/60 px-2 py-0.5 rounded-full font-semibold">
-              v2.5 Leitor CSV &amp; JSON
+              v2.6 C99 + Preview 1:1
             </span>
           </div>
         </div>
@@ -180,23 +181,34 @@ export default function App() {
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
           <a
-            href="/log_plotter.exe?v=2.5.0"
-            download="log_plotter.exe"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
-            title="Download do executável log_plotter.exe v2.5 compilado para Windows 11 com suporte a CSV, JSON, Cursor Eixo X e Exportação PNG"
+            href="/grafico_c.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-lg transition-colors shadow-sm"
+            title="Abrir diretamente o arquivo grafico_c.html exportado pelo log_plotter.exe"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Baixar .EXE (v2.5)</span>
+            <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Ver HTML do .EXE</span>
           </a>
 
           <a
-            href="/log_plotter_windows11.zip?v=2.5.0"
+            href="/log_plotter.exe?v=2.6.0"
+            download="log_plotter.exe"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
+            title="Download do executável log_plotter.exe v2.6 compilado para Windows 11 com suporte a CSV, JSON, Triplo Eixo Y/Y1/Y2, Cursor Eixo X e Exportação PNG"
+          >
+            <Download className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Baixar .EXE (v2.6)</span>
+          </a>
+
+          <a
+            href="/log_plotter_windows11.zip?v=2.6.0"
             download="log_plotter_windows11.zip"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors shadow-sm"
-            title="Download do pacote .ZIP atualizado (v2.5) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
+            title="Download do pacote .ZIP atualizado (v2.6) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
           >
             <Package className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Pacote .ZIP (v2.5)</span>
+            <span>Pacote .ZIP (v2.6)</span>
           </a>
 
           <button

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📊 LogPlotter C &bull; CSV &amp; JSON Data Log Visualizer (v2.5)
+# 📊 LogPlotter C &bull; CSV &amp; JSON Data Log Visualizer (v2.6)
 
 **Leitor de logs e telemetria de alta performance e plotador gráfico interativo desenvolvido em Linguagem C (ANSI C99) com suporte a arquivos CSV e JSON, exportação para Chart.js e binário nativo para Windows 11.**
 
@@ -23,7 +23,7 @@
 
 ## 🎯 Visão Geral
 
-O **LogPlotter C (v2.5)** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, telemetria veicular CAN Bus e métricas de sistemas armazenados em formato **CSV (delimitado por vírgula `,`, ponto-e-vírgula `;` ou tabulação `\t`)**, bem como **JSON** ou **JSONL (JSON Lines)**.
+O **LogPlotter C (v2.6)** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, telemetria veicular CAN Bus e métricas de sistemas armazenados em formato **CSV (delimitado por vírgula `,`, ponto-e-vírgula `;` ou tabulação `\t`)**, bem como **JSON** ou **JSONL (JSON Lines)**.
 
 O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos e autônomos.
 
@@ -48,11 +48,14 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 - **Eixo X Dinâmico**: selecione qualquer campo temporal ou utilize o índice sequencial numérico (`#1, #2, #3...`).
 - **Múltiplas Séries Simultâneas**: plote quantas métricas desejar com paleta de cores de alto contraste.
 - **Classificação Inteligente**: exibe os sinais selecionados no topo com botão alternador `[Selecionados 1º]` / `[A-Z Geral]`.
-- **Eixo Y Duplo (Left / Right)**: plote simultaneamente métricas de ordens de grandeza diferentes sem distorção das curvas.
-- **Ajuste da Escala do Eixo Y**: modo Automático ou Manual, Iniciar no zero (0) e Escala Logarítmica.
-- **Estilos Gráficos**: alternância instantânea entre Linha, Área preenchida, Barras e Degraus (*Stepped lines*).
+- **Eixos Y Múltiplos (Y, Y1, Y2)**: plote simultaneamente métricas de ordens de grandeza distintas em até três eixos independentes:
+  - **Eixo Y**: esquerdo principal (cinza/slate)
+  - **Eixo Y1**: direito 1 (azul celeste `#38bdf8`)
+  - **Eixo Y2**: direito 2 (âmbar/dourado `#fbbf24`)
+- **Ajuste da Escala do Eixo Y**: modo Automático ou Manual (com limites independentes para Y, Y1 e Y2), Iniciar no zero (0) e Escala Logarítmica.
+- **Estilos Gráficos Fluidos**: alternância instantânea e sem bloqueios entre Linha, Área preenchida, Barras e Degraus (*Stepped lines*).
 - **Filtro de Faixa Temporal**: barra de rolagem interativa (*range scrubber*) com atalhos para `100%`, `50%`, `25%` e `Últimos 30` registros.
-- **Exportação com Dados do Cursor**: download do gráfico em imagem **PNG em alta resolução** com fundo escuro, incluindo a linha do cursor, marcador da amostra, pontos de interseção e cartão flutuante de inspeção com todos os valores.
+- **Exportação com Dados do Cursor**: download do gráfico em imagem **PNG em alta resolução** com fundo escuro, incluindo a linha do cursor, marcador da amostra, pontos de interseção e cartão flutuante de inspeção com todos os valores numéricos e badges dos eixos.
 
 ---
 

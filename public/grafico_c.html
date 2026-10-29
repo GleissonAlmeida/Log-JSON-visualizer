@@ -8,9 +8,19 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; color: #f1f5f9; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
-    .app-container { display: grid; grid-template-columns: 340px 1fr; gap: 20px; max-width: 1540px; margin: 0 auto; width: 100%; flex: 1; }
-    @media (max-width: 1024px) { .app-container { grid-template-columns: 1fr; } }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid #1e293b; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo-box { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: #fff; }
+    .badge-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 600; }
+    .dataset-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; background: #0f172a; padding: 3px 10px; border-radius: 6px; border: 1px solid #334155; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .btn-head { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .btn-head:hover { background: #334155; color: #fff; }
+    .btn-head.primary { background: #4f46e5; color: #fff; border-color: #4338ca; }
+    .btn-head.primary:hover { background: #4338ca; }
+    .app-container { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px 24px; max-width: 1600px; margin: 0 auto; width: 100%; flex: 1; }
+    @media (max-width: 1024px) { .app-container { grid-template-columns: 1fr; padding: 12px; } }
     .panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
     .chart-panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
     .title-sec { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
@@ -32,16 +42,49 @@
     .range-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; align-items: center; }
     .range-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
     .btn-tool { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-    .btn-tool:hover { background: #334155; color: #fff; }
-    .axis-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; background: #070d19; cursor: pointer; color: #ffffff; }
-    .axis-badge.right { color: #38bdf8; border-color: #0369a1; background: #082f49; }
+    .axis-btn-group { display: flex; align-items: center; background: #090d16; border: 1px solid #334155; border-radius: 6px; padding: 2px; gap: 2px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+    .btn-axis-sub { background: transparent; border: none; color: #64748b; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.15s; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    .btn-axis-sub:hover { color: #cbd5e1; }
+    .btn-axis-sub.y.active { background: #475569; color: #fff; font-weight: bold; }
+    .btn-axis-sub.y1.active { background: #0284c7; color: #fff; font-weight: bold; }
+    .btn-axis-sub.y2.active { background: #d97706; color: #fff; font-weight: bold; }
     .btn-sort { background: #070d19; border: 1px solid #1e293b; color: #94a3b8; font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono'; white-space: nowrap; transition: all 0.15s; }
     .btn-sort.active { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }
     .section-divider { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid #1e293b; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }
     .badge-zoh { font-size: 9px; background: #1e1b4b; color: #a5b4fc; padding: 1px 5px; border-radius: 4px; border: 1px solid #4338ca; font-family: 'JetBrains Mono'; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; max-width: 620px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }
+    .modal-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+    .modal-close { background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
   </style>
 </head>
 <body>
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <span style="color: #818cf8; font-size: 18px;">&#9889;</span>
+        <span>LogPlotter C</span>
+        <span class="badge-tag">C99 + Chart.js</span>
+      </div>
+      <div class="dataset-pill">
+        <span>&#128196;</span>
+        <span id="headerDatasetName">sample_can_bus.csv</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <label class="btn-head primary" title="Carregar arquivo CSV ou JSON">
+        <span>&#128194; Carregar Arquivo</span>
+        <input type="file" id="fileHeadUpload" accept=".csv,.json,.log,.txt" style="display:none;" onchange="loadNewJsonFile(event)">
+      </label>
+      <button class="btn-head" onclick="openPasteModal()">&#128203; Colar Dados</button>
+      <button class="btn-head" onclick="openExamplesModal()">&#128202; Exemplos</button>
+      <button class="btn-head" onclick="openDocModal()">&#128216; Ajuda / Doc</button>
+      <button class="btn-head" onclick="downloadPNG()">&#128229; Salvar PNG</button>
+    </div>
+  </header>
+
   <div class="app-container">
     <div class="panel">
       <div style="background: #070d19; border: 1px solid #1e293b; border-radius: 8px; padding: 12px;">
@@ -77,7 +120,7 @@
             <input type="checkbox" id="chkPoints" checked onchange="updateChart()"> Pontos no gráfico
           </label>
           <label class="toggle-label">
-            <input type="checkbox" id="chkDualAxis" checked onchange="updateChart()"> Eixo Y duplo (L / R)
+            <input type="checkbox" id="chkDualAxis" checked onchange="updateChart()"> Eixos Y múltiplos (Y, Y1, Y2)
           </label>
           <label class="toggle-label" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between;" title="Zero-Order Hold: Mantém o último valor transmitido para sinais esparsos de CAN bus ou sensores assíncronos">
             <span style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="chkHold" checked onchange="updateChart()"> Hold de Telemetria (CAN)</span>
@@ -107,10 +150,17 @@
               <input type="number" id="inpMaxY" placeholder="Máx Y" oninput="updateChart()" style="font-size: 11px; padding: 4px 6px;">
             </div>
             <div id="boxY1Limits" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;">
-              <div style="font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;">Limites Eixo Y1 (Direito):</div>
+              <div style="font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;">Limites Eixo Y1 (Direito 1):</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <input type="number" id="inpMinY1" placeholder="Mín Y1" oninput="updateChart()" style="font-size: 11px; padding: 4px 6px; color: #38bdf8;">
                 <input type="number" id="inpMaxY1" placeholder="Máx Y1" oninput="updateChart()" style="font-size: 11px; padding: 4px 6px; color: #38bdf8;">
+              </div>
+            </div>
+            <div id="boxY2Limits" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;">
+              <div style="font-size: 10px; color: #fbbf24; font-weight: 600; margin-bottom: 4px;">Limites Eixo Y2 (Direito 2):</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <input type="number" id="inpMinY2" placeholder="Mín Y2" oninput="updateChart()" style="font-size: 11px; padding: 4px 6px; color: #fbbf24;">
+                <input type="number" id="inpMaxY2" placeholder="Máx Y2" oninput="updateChart()" style="font-size: 11px; padding: 4px 6px; color: #fbbf24;">
               </div>
             </div>
           </div>
@@ -136,7 +186,11 @@
                 <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 1.0 &bull; méd: 0.2</div>
               </div>
             </label>
-            <button class="axis-badge " id="axis_BrakeSwitch" onclick="toggleAxis('BrakeSwitch')">Eixo Esq (Y)</button>
+            <div class="axis-btn-group" id="axis_grp_BrakeSwitch">
+              <button class="btn-axis-sub y active" onclick="setMetricAxis('BrakeSwitch','y')" title="Eixo Principal (Y)">Y</button>
+              <button class="btn-axis-sub y1 " onclick="setMetricAxis('BrakeSwitch','y1')" title="Eixo Direito 1 (Y1)">Y1</button>
+              <button class="btn-axis-sub y2 " onclick="setMetricAxis('BrakeSwitch','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
+            </div>
           </div>
           <div class="metric-item selected" id="item_WheelBasedVehicleSpeed" data-key="WheelBasedVehicleSpeed">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
@@ -147,7 +201,11 @@
                 <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 26.4 &bull; méd: 17.0</div>
               </div>
             </label>
-            <button class="axis-badge right" id="axis_WheelBasedVehicleSpeed" onclick="toggleAxis('WheelBasedVehicleSpeed')">Eixo Dir (Y1)</button>
+            <div class="axis-btn-group" id="axis_grp_WheelBasedVehicleSpeed">
+              <button class="btn-axis-sub y " onclick="setMetricAxis('WheelBasedVehicleSpeed','y')" title="Eixo Principal (Y)">Y</button>
+              <button class="btn-axis-sub y1 active" onclick="setMetricAxis('WheelBasedVehicleSpeed','y1')" title="Eixo Direito 1 (Y1)">Y1</button>
+              <button class="btn-axis-sub y2 " onclick="setMetricAxis('WheelBasedVehicleSpeed','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
+            </div>
           </div>
           <div class="metric-item selected" id="item_curr_gear" data-key="curr_gear">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
@@ -158,7 +216,11 @@
                 <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
               </div>
             </label>
-            <button class="axis-badge " id="axis_curr_gear" onclick="toggleAxis('curr_gear')">Eixo Esq (Y)</button>
+            <div class="axis-btn-group" id="axis_grp_curr_gear">
+              <button class="btn-axis-sub y " onclick="setMetricAxis('curr_gear','y')" title="Eixo Principal (Y)">Y</button>
+              <button class="btn-axis-sub y1 " onclick="setMetricAxis('curr_gear','y1')" title="Eixo Direito 1 (Y1)">Y1</button>
+              <button class="btn-axis-sub y2 active" onclick="setMetricAxis('curr_gear','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
+            </div>
           </div>
           <div class="metric-item " id="item_sel_gear" data-key="sel_gear">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
@@ -169,7 +231,11 @@
                 <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
               </div>
             </label>
-            <button class="axis-badge " id="axis_sel_gear" onclick="toggleAxis('sel_gear')">Eixo Esq (Y)</button>
+            <div class="axis-btn-group" id="axis_grp_sel_gear">
+              <button class="btn-axis-sub y active" onclick="setMetricAxis('sel_gear','y')" title="Eixo Principal (Y)">Y</button>
+              <button class="btn-axis-sub y1 " onclick="setMetricAxis('sel_gear','y1')" title="Eixo Direito 1 (Y1)">Y1</button>
+              <button class="btn-axis-sub y2 " onclick="setMetricAxis('sel_gear','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1679,7 +1745,7 @@
     const metricMeta = {
       "BrakeSwitch": { color: "#3b82f6", yAxis: "y", checked: true },
       "WheelBasedVehicleSpeed": { color: "#10b981", yAxis: "y1", checked: true },
-      "curr_gear": { color: "#f59e0b", yAxis: "y", checked: true },
+      "curr_gear": { color: "#f59e0b", yAxis: "y2", checked: true },
       "sel_gear": { color: "#ec4899", yAxis: "y", checked: false },
     };
 
@@ -1741,6 +1807,7 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(badgeText, x, top - 15);
+        const activeMetrics = [];
         chart.data.datasets.forEach((ds, dsIdx) => {
           const dsMeta = chart.getDatasetMeta(dsIdx);
           if (dsMeta && dsMeta.data && dsMeta.data[cursorIdx]) {
@@ -1755,7 +1822,41 @@
               ctx.stroke();
             }
           }
+          const eff = getEffectiveVal(ds.label, cursorIdx);
+          if (eff && eff.val !== null) {
+            activeMetrics.push({ label: ds.label, color: ds.borderColor, val: eff.val.toFixed(2), isHeld: eff.isHeld });
+          }
         });
+        if (activeMetrics.length > 0) {
+          const cardW = 180;
+          const lineH = 18;
+          const cardH = 24 + activeMetrics.length * lineH + 8;
+          let cardX = (x + 16 + cardW > chart.chartArea.right - 8) ? x - cardW - 16 : x + 16;
+          let cardY = Math.min(top + 10, bottom - cardH - 8);
+          ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+          ctx.fillRect(cardX, cardY, cardW, cardH);
+          ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : 'rgba(99, 102, 241, 0.7)';
+          ctx.strokeRect(cardX, cardY, cardW, cardH);
+          ctx.textAlign = 'left';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.fillStyle = isPinned ? '#fbbf24' : '#a5b4fc';
+          ctx.fillText(`Amostra: ${xLabel}`, cardX + 10, cardY + 14);
+          activeMetrics.forEach((m, mIdx) => {
+            const itemY = cardY + 28 + mIdx * lineH;
+            ctx.beginPath();
+            ctx.arc(cardX + 14, itemY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = m.color;
+            ctx.fill();
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(m.label, cardX + 24, itemY + 3);
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`${m.val}${m.isHeld ? ' [H]' : ''}`, cardX + cardW - 10, itemY + 3);
+            ctx.textAlign = 'left';
+          });
+        }
         ctx.restore();
       }
     };
@@ -1772,6 +1873,8 @@
       const maxYVal = isManual && document.getElementById('inpMaxY').value !== '' ? parseFloat(document.getElementById('inpMaxY').value) : undefined;
       const minY1Val = isManual && document.getElementById('inpMinY1').value !== '' ? parseFloat(document.getElementById('inpMinY1').value) : undefined;
       const maxY1Val = isManual && document.getElementById('inpMaxY1').value !== '' ? parseFloat(document.getElementById('inpMaxY1').value) : undefined;
+      const minY2Val = isManual && document.getElementById('inpMinY2') && document.getElementById('inpMinY2').value !== '' ? parseFloat(document.getElementById('inpMinY2').value) : undefined;
+      const maxY2Val = isManual && document.getElementById('inpMaxY2') && document.getElementById('inpMaxY2').value !== '' ? parseFloat(document.getElementById('inpMaxY2').value) : undefined;
       document.getElementById('dispXKey').innerText = xKey === '_index' ? 'Índice sequencial' : xKey;
 
       const filtered = rawData.slice(rangeStart, rangeEnd + 1);
@@ -1780,7 +1883,8 @@
 
       const labels = filtered.map(r => xKey === '_index' ? `#${r._idx}` : r.x);
       let selectedCount = 0;
-      let hasRightAxis = false;
+      let hasY1Axis = false;
+      let hasY2Axis = false;
 
       const datasets = [];
       for (const [key, cfg] of Object.entries(metricMeta)) {
@@ -1788,7 +1892,8 @@
         if (chk && chk.checked) {
           selectedCount++;
           const axis = isDualAxis ? cfg.yAxis : 'y';
-          if (axis === 'y1') hasRightAxis = true;
+          if (axis === 'y1') hasY1Axis = true;
+          if (axis === 'y2') hasY2Axis = true;
           const isStepped = (chartType === 'stepped');
           const isArea = (chartType === 'area');
           const isHold = document.getElementById('chkHold') ? document.getElementById('chkHold').checked : true;
@@ -1853,11 +1958,13 @@
           scales: {
             x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 } },
             y: { type: scaleType, beginAtZero: beginZero, min: minYVal, max: maxYVal, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } },
-            ...(hasRightAxis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } } } } : {})
+            ...(hasY1Axis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y1', color: '#38bdf8' } } } : {}),
+            ...(hasY2Axis ? { y2: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY2Val, max: maxY2Val, grid: { drawOnChartArea: false }, ticks: { color: '#fbbf24', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y2', color: '#fbbf24' } } } : {})
           }
         }
       });
       updateCursorHud();
+      initCanvasInteractions();
     }
 
     function toggleCursor() {
@@ -1889,6 +1996,54 @@
       cursorIdx = Math.max(0, Math.min(filtered.length - 1, cursorIdx + delta));
       updateCursorHud();
       if (chartInstance) chartInstance.draw();
+    }
+
+    function updateCursorFromClientX(clientX) {
+      if (!cursorEnabled || !chartInstance || !chartInstance.chartArea || !chartInstance.canvas) return;
+      const filtered = rawData.slice(rangeStart, rangeEnd + 1);
+      if (!filtered.length) return;
+      const rect = chartInstance.canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const { left, right } = chartInstance.chartArea;
+      const clampedX = Math.max(left, Math.min(right, x));
+      const ratio = (clampedX - left) / Math.max(1, right - left);
+      const newIdx = Math.max(0, Math.min(filtered.length - 1, Math.round(ratio * (filtered.length - 1))));
+      cursorIdx = newIdx;
+      updateCursorHud();
+      chartInstance.draw();
+    }
+
+    function initCanvasInteractions() {
+      const canvas = document.getElementById('mainCanvas');
+      if (!canvas || canvas._hasInit) return;
+      canvas._hasInit = true;
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      canvas.addEventListener('pointerdown', (e) => {
+        if (!cursorEnabled || e.button !== 0) return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        updateCursorFromClientX(e.clientX);
+      });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!cursorEnabled) return;
+        if (isPinned && !isDragging) return;
+        updateCursorFromClientX(e.clientX);
+      });
+      window.addEventListener('pointerup', (e) => {
+        if (isDragging) {
+          isDragging = false;
+          const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+          if (dist < 6) togglePinCursor();
+        }
+      });
+      window.addEventListener('keydown', (e) => {
+        if (!cursorEnabled) return;
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'range') return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); stepCursor(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); stepCursor(1); }
+      });
     }
 
     function getEffectiveVal(key, idx) {
@@ -1924,20 +2079,25 @@
       const container = document.getElementById('hudMetricsContainer');
       if (!container) return;
       container.innerHTML = '';
+      const isDual = document.getElementById('chkDualAxis') ? document.getElementById('chkDualAxis').checked : true;
       for (const [key, cfg] of Object.entries(metricMeta)) {
         const chk = document.getElementById('chk_' + key);
         if (chk && chk.checked) {
           const eff = getEffectiveVal(key, cursorIdx);
           const valFormatted = eff.val !== null ? eff.val.toFixed(2) : 'N/D';
           const holdTag = eff.isHeld ? ' <span style="font-size:8px;color:#818cf8;border:1px solid #4338ca;padding:0 3px;border-radius:3px;">hold</span>' : '';
+          const ax = cfg.yAxis || 'y';
+          const axStyle = ax === 'y2' ? 'color:#fbbf24;background:#451a03;border-color:#b45309;' : (ax === 'y1' ? 'color:#38bdf8;background:#082f49;border-color:#0284c7;' : 'color:#94a3b8;background:#1e293b;border-color:#334155;');
+          const axTag = isDual ? ` <span style="font-size:9px;font-family:\'JetBrains Mono\';padding:1px 4px;border-radius:4px;border:1px solid;${axStyle}font-weight:700;">${ax.toUpperCase()}</span>` : '';
           const badge = document.createElement('div');
           badge.style = 'display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #1e293b;padding:3px 8px;border-radius:6px;';
-          badge.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block;"></span><span style="color:#94a3b8;font-family:\'JetBrains Mono\';font-size:10px;">${key}:</span><strong style="color:#fff;font-family:\'JetBrains Mono\';">${valFormatted}</strong>${holdTag}`;
+          badge.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block;"></span><span style="color:#94a3b8;font-family:\'JetBrains Mono\';font-size:10px;">${key}:</span><strong style="color:#fff;font-family:\'JetBrains Mono\';">${valFormatted}</strong>${holdTag}${axTag}`;
           container.appendChild(badge);
         }
       }
     }
 
+    /* Funções de controle */
     function setScaleMode(m) {
       scaleMode = m;
       document.getElementById('btnScaleAuto').classList.toggle('active', m === 'auto');
@@ -2009,18 +2169,23 @@
       sortMetricsList();
       updateChart();
     }
-    function toggleAxis(key) {
-      const btn = document.getElementById('axis_' + key);
-      if (metricMeta[key].yAxis === 'y') {
-        metricMeta[key].yAxis = 'y1';
-        btn.classList.add('right');
-        btn.innerText = 'Eixo Dir (Y1)';
-      } else {
-        metricMeta[key].yAxis = 'y';
-        btn.classList.remove('right');
-        btn.innerText = 'Eixo Esq (Y)';
+    function setMetricAxis(key, axis) {
+      if (!metricMeta[key]) return;
+      metricMeta[key].yAxis = axis;
+      const grp = document.getElementById('axis_grp_' + key);
+      if (grp) {
+        const btns = grp.querySelectorAll('.btn-axis-sub');
+        btns.forEach(b => {
+          b.classList.toggle('active', b.classList.contains(axis));
+        });
       }
       updateChart();
+    }
+    function toggleAxis(key) {
+      if (!metricMeta[key]) return;
+      const cur = metricMeta[key].yAxis || 'y';
+      const next = cur === 'y' ? 'y1' : (cur === 'y1' ? 'y2' : 'y');
+      setMetricAxis(key, next);
     }
     function selectAllMetrics() {
       for (const k in metricMeta) {
@@ -2215,6 +2380,50 @@
       return res;
     }
 
+    function applyLoadedData(arr, datasetName) {
+      if (!arr || !arr.length) return alert('Arquivo vazio ou não reconhecido como JSON/CSV');
+      const allKeys = new Set();
+      arr.forEach(r => Object.keys(r).forEach(k => allKeys.add(k)));
+      let newX = Array.from(allKeys).find(k => k === '#' || k.toLowerCase().includes('time') || k.toLowerCase().includes('date') || k === 'id') || '_index';
+      const numKeys = Array.from(allKeys).filter(k => k !== newX && k !== '#' && k !== '_index');
+      rawData.length = 0;
+      const lastKnown = {};
+      for (let i = 0; i < arr.length; i++) {
+        const row = { _idx: i + 1, x: String(arr[i][newX] !== undefined ? arr[i][newX] : (newX === '#' ? '#' + (i + 1) : i + 1)) };
+        numKeys.forEach(k => {
+          if (arr[i][k] !== undefined && arr[i][k] !== null && !isNaN(Number(arr[i][k]))) {
+            lastKnown[k] = Number(arr[i][k]);
+          }
+          row[k] = lastKnown[k] !== undefined ? lastKnown[k] : 0;
+        });
+        rawData.push(row);
+      }
+      for (const k in metricMeta) delete metricMeta[k];
+      const pal = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
+      const listEl = document.getElementById('metricList');
+      listEl.innerHTML = '';
+      numKeys.forEach((k, idx) => {
+        const col = pal[idx % pal.length];
+        const axChoice = (idx === 1 ? 'y1' : (idx === 2 ? 'y2' : 'y'));
+        metricMeta[k] = { color: col, yAxis: axChoice, checked: (idx < 3) };
+        const itm = document.createElement('div');
+        itm.className = 'metric-item' + (idx < 3 ? ' selected' : '');
+        itm.id = 'item_' + k;
+        itm.setAttribute('data-key', k);
+        itm.innerHTML = `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;"><input type="checkbox" id="chk_${k}" ${idx < 3 ? 'checked' : ''} onchange="toggleMetric('${k}')" style="accent-color:#4f46e5;"><span class="dot" style="background:${col}"></span><div style="font-size:12px;font-weight:600;font-family:'JetBrains Mono';">${k}</div></label><div class="axis-btn-group" id="axis_grp_${k}"><button class="btn-axis-sub y ${axChoice==='y'?'active':''}" onclick="setMetricAxis('${k}','y')" title="Eixo Principal (Y)">Y</button><button class="btn-axis-sub y1 ${axChoice==='y1'?'active':''}" onclick="setMetricAxis('${k}','y1')" title="Eixo Direito 1 (Y1)">Y1</button><button class="btn-axis-sub y2 ${axChoice==='y2'?'active':''}" onclick="setMetricAxis('${k}','y2')" title="Eixo Direito 2 (Y2)">Y2</button></div>`;
+        listEl.appendChild(itm);
+      });
+      const headName = document.getElementById('headerDatasetName');
+      if (headName && datasetName) headName.innerText = datasetName;
+      const selX = document.getElementById('selectX');
+      selX.innerHTML = `<option value="${newX}" selected>${newX}</option><option value="_index"># Índice Sequencial</option>`;
+      const sEl = document.getElementById('rngStart');
+      const eEl = document.getElementById('rngEnd');
+      if (sEl && eEl) { sEl.max = rawData.length - 1; eEl.max = rawData.length - 1; }
+      sortMetricsList();
+      resetRange();
+    }
+
     function loadNewJsonFile(evt) {
       const file = evt.target.files[0];
       if (!file) return;
@@ -2238,48 +2447,133 @@
               }
             }
           }
-          if (!arr || !arr.length) return alert('Arquivo vazio ou não reconhecido como JSON/CSV');
-          const allKeys = new Set();
-          arr.forEach(r => Object.keys(r).forEach(k => allKeys.add(k)));
-          let newX = Array.from(allKeys).find(k => k === '#' || k.includes('time') || k.includes('date') || k === 'id') || '_index';
-          const numKeys = Array.from(allKeys).filter(k => k !== newX && k !== '#' && k !== '_index');
-          rawData.length = 0;
-          const lastKnown = {};
-          for (let i = 0; i < arr.length; i++) {
-            const row = { _idx: i + 1, x: String(arr[i][newX] !== undefined ? arr[i][newX] : (newX === '#' ? '#' + (i + 1) : i + 1)) };
-            numKeys.forEach(k => {
-              if (arr[i][k] !== undefined && arr[i][k] !== null && !isNaN(Number(arr[i][k]))) {
-                lastKnown[k] = Number(arr[i][k]);
-              }
-              row[k] = lastKnown[k] !== undefined ? lastKnown[k] : 0;
-            });
-            rawData.push(row);
-          }
-          for (const k in metricMeta) delete metricMeta[k];
-          const pal = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
-          const listEl = document.getElementById('metricList');
-          listEl.innerHTML = '';
-          numKeys.forEach((k, idx) => {
-            const col = pal[idx % pal.length];
-            metricMeta[k] = { color: col, yAxis: (idx === 1 ? 'y1' : 'y'), checked: (idx < 3) };
-            const itm = document.createElement('div');
-            itm.className = 'metric-item' + (idx < 3 ? ' selected' : '');
-            itm.id = 'item_' + k;
-            itm.setAttribute('data-key', k);
-            itm.innerHTML = `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;"><input type="checkbox" id="chk_${k}" ${idx < 3 ? 'checked' : ''} onchange="toggleMetric('${k}')" style="accent-color:#4f46e5;"><span class="dot" style="background:${col}"></span><div style="font-size:12px;font-weight:600;font-family:'JetBrains Mono';">${k}</div></label><button class="axis-badge ${idx === 1 ? 'right' : ''}" id="axis_${k}" onclick="toggleAxis('${k}')">${idx === 1 ? 'Eixo Dir (Y1)' : 'Eixo Esq (Y)'}</button>`;
-            listEl.appendChild(itm);
-          });
-          document.getElementById('lblFileRecords').innerText = `${arr.length} registros`;
-          const selX = document.getElementById('selectX');
-          selX.innerHTML = `<option value="${newX}" selected>${newX}</option><option value="_index"># Índice Sequencial</option>`;
-          sortMetricsList();
-          resetRange();
+          applyLoadedData(arr, file.name);
         } catch(err) { alert('Erro ao processar arquivo: ' + err.message); }
       };
       reader.readAsText(file);
     }
 
-    window.onload = function() { sortMetricsList(); updateChart(); };
+    function openPasteModal() { document.getElementById('modalPaste').style.display = 'flex'; }
+    function openExamplesModal() { document.getElementById('modalExamples').style.display = 'flex'; }
+    function openDocModal() { document.getElementById('modalDoc').style.display = 'flex'; }
+    function closeModals() {
+      document.getElementById('modalPaste').style.display = 'none';
+      document.getElementById('modalExamples').style.display = 'none';
+      document.getElementById('modalDoc').style.display = 'none';
+    }
+
+    function applyPastedData() {
+      const txt = document.getElementById('txtPasteData').value.trim();
+      if (!txt) return alert('Por favor, cole algum texto JSON ou CSV.');
+      try {
+        let arr;
+        if (txt.startsWith('[') || txt.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(txt);
+            arr = Array.isArray(parsed) ? parsed : (parsed.data || parsed.logs || [parsed]);
+          } catch(err) {
+            arr = parseCsvString(txt);
+          }
+        } else {
+          arr = parseCsvString(txt);
+        }
+        applyLoadedData(arr, 'Log_Colado_Manual');
+        closeModals();
+      } catch(err) { alert('Falha ao processar texto colado: ' + err.message); }
+    }
+
+    function loadExampleDataset(type) {
+      if (type === 'can') {
+        const csv = '#,Timestamp,RPM,Speed_kmh,Throttle_pct,CoolantTemp_C,OilPressure_bar\n' +
+          '1,0.00,850,0,0.0,84.2,2.4\n' +
+          '2,0.10,1200,12,18.5,84.3,2.9\n' +
+          '3,0.20,2400,34,42.0,84.5,3.8\n' +
+          '4,0.30,3600,58,68.0,85.0,4.2\n' +
+          '5,0.40,4900,86,92.0,85.6,4.6\n' +
+          '6,0.50,5800,108,100.0,86.4,4.9\n' +
+          '7,0.60,6200,125,95.0,87.1,5.1\n' +
+          '8,0.70,4100,128,10.0,87.0,3.6\n' +
+          '9,0.80,3200,115,0.0,86.5,3.2\n' +
+          '10,0.90,2100,85,5.0,85.8,2.8';
+        applyLoadedData(parseCsvString(csv), 'sample_can_bus.csv');
+      } else if (type === 'iot') {
+        const iot = [
+          { timestamp: '10:00:00', Vibration_RMS: 0.82, BearingTemp: 42.5, Current_A: 14.2, Pressure_bar: 5.8 },
+          { timestamp: '10:00:05', Vibration_RMS: 0.91, BearingTemp: 43.1, Current_A: 15.0, Pressure_bar: 5.9 },
+          { timestamp: '10:00:10', Vibration_RMS: 1.45, BearingTemp: 44.8, Current_A: 17.8, Pressure_bar: 6.2 },
+          { timestamp: '10:00:15', Vibration_RMS: 2.10, BearingTemp: 47.2, Current_A: 21.5, Pressure_bar: 6.7 },
+          { timestamp: '10:00:20', Vibration_RMS: 1.85, BearingTemp: 48.0, Current_A: 19.8, Pressure_bar: 6.4 },
+          { timestamp: '10:00:25', Vibration_RMS: 1.10, BearingTemp: 46.3, Current_A: 16.2, Pressure_bar: 6.0 }
+        ];
+        applyLoadedData(iot, 'sample_iot_sensors.json');
+      }
+      closeModals();
+    }
+
+    window.onload = function() { sortMetricsList(); updateChart(); initCanvasInteractions(); };
   </script>
+
+  <!-- Modais de Interação -->
+  <div id="modalPaste" class="modal-overlay" onclick="if(event.target===this)closeModals()">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>Colar Dados Brutos (JSON ou CSV)</span>
+        <button class="modal-close" onclick="closeModals()">&times;</button>
+      </div>
+      <p style="font-size: 12px; color: #94a3b8;">Cole aqui o conteúdo de um arquivo de log (formato CSV delimitado por vírgula/ponto-e-vírgula ou JSON array de objetos):</p>
+      <textarea id="txtPasteData" placeholder="Cole aqui seus dados...\nExemplo CSV:\n#,RPM,Speed_kmh,CoolantTemp\n1,850,0,84\n2,1200,15,85" style="width: 100%; height: 220px; background: #070d19; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px; resize: vertical;"></textarea>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn-head" onclick="closeModals()">Cancelar</button>
+        <button class="btn-head primary" onclick="applyPastedData()">&#9654; Processar e Visualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalExamples" class="modal-overlay" onclick="if(event.target===this)closeModals()">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>Exemplos de Datasets Integrados</span>
+        <button class="modal-close" onclick="closeModals()">&times;</button>
+      </div>
+      <p style="font-size: 12px; color: #94a3b8;">Selecione um dos cenários prontos de teste para explorar os eixos múltiplos e o cursor de inspeção:</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="background: #070d19; border: 1px solid #1e293b; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #fff;">1. CAN Bus Automotivo (CSV)</div>
+            <div style="font-size: 11px; color: #64748b;">RPM, Velocidade, Posição da Borboleta, Temperatura do Motor</div>
+          </div>
+          <button class="btn-head primary" onclick="loadExampleDataset('can')">Carregar</button>
+        </div>
+        <div style="background: #070d19; border: 1px solid #1e293b; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #fff;">2. Sensores IoT Industriais (JSON)</div>
+            <div style="font-size: 11px; color: #64748b;">Vibração RMS, Temperatura de Mancal, Corrente Trifásica, Pressão</div>
+          </div>
+          <button class="btn-head primary" onclick="loadExampleDataset('iot')">Carregar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalDoc" class="modal-overlay" onclick="if(event.target===this)closeModals()">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>Documentação e Guia de Uso</span>
+        <button class="modal-close" onclick="closeModals()">&times;</button>
+      </div>
+      <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+        <p><strong style="color: #818cf8;">LogPlotter v2.5 (C99 + Chart.js)</strong> é uma ferramenta profissional de alta performance para visualização de logs técnicos de telemetria.</p>
+        <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 6px;">
+          <li><strong>Eixos Múltiplos (Y, Y1, Y2):</strong> atribua cada sinal individualmente a um eixo dedicado através dos botões segmentados [Y] [Y1] [Y2].</li>
+          <li><strong>Cursor Vertical do Eixo X:</strong> passe o mouse para inspecionar amostras a 60 FPS com interpolação contínua; use as setas do teclado ou clique para fixar o cursor.</li>
+          <li><strong>Sample & Hold:</strong> telemetria esparsa mantém o último valor transmitido preenchendo lacunas sem descontinuidades abruptas.</li>
+          <li><strong>Exportação em PNG HD:</strong> o botão Salvar PNG gera imagem com fundo escuro profissional, linha de cursor e cartão flutuante de inspeção.</li>
+        </ul>
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn-head primary" onclick="closeModals()">Fechar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

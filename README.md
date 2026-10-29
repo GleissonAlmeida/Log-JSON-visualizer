@@ -23,30 +23,37 @@
 
 ## 🎯 Visão Geral
 
-O **LogPlotter C** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, métricas de servidores web e registros de performance armazenados em formato **JSON** ou **JSONL (JSON Lines)**.
+O **LogPlotter C** é uma solução de alta performance para análise e visualização de dados de telemetria (CAN Bus automotivo, sensores industriais, métricas de servidores e registros IoT) armazenados em formatos **CSV (.csv)**, **JSON (.json)** ou **JSONL (.log, .ndjson)**.
 
-O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos e autônomos.
+O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura (ANSI C99)** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos e autônomos.
 
 ---
 
 ## ✨ Recursos Principais
 
 ### 📥 Ingestão e Leitura de Dados
-- **Upload Direto no App**: suporte a arquivos `.json`, `.log`, `.ndjson` e `.txt`.
+- **Suporte Nativo a CSV (.csv)**: auto-detecção inteligente de separadores (vírgula `,`, ponto-e-vírgula `;`, tabulação `\t` e pipe `|`) com conversão de casas decimais com vírgula (ex: `12,50`).
+- **Leitor Dinâmico de JSON / JSONL**: leitura de arrays JSON e arquivos JSON Lines com detecção automática de registros e propriedades numéricas.
 - **Desaninhamento Automático (*Object Flattening*)**: converte nós aninhados como `{"sensores": {"temperatura": 24.5}}` em chaves acessíveis `sensores.temperatura`.
-- **Detecção Inteligente**: identifica automaticamente campos temporais (`timestamp`, `horario`, `data`, `time`) e variáveis numéricas para plotagem.
+- **Detecção Inteligente**: identifica automaticamente campos temporais (`timestamp`, `horario`, `data`, `time`, `#`) e variáveis numéricas para plotagem.
 
 ### 📈 Gráficos Interativos (Chart.js)
+- **Cursor Interativo do Eixo X**: inspeção de amostras em tempo real a 60 FPS com ponteiro do mouse, arrasto suave ou teclas direcionais (← / →), com opção de **Fixar Cursor**.
+- **Hold de Telemetria (*Sample & Hold*)**: recupera o último valor válido recebido para sinais esparsos de CAN bus ou sensores assíncronos, exibindo tag visual `[hold]` no HUD.
+- **Exportação PNG Completa**: grava imagem em alta definição registrando o traçado das curvas, a linha vertical tracejada do cursor, os marcadores e o cartão de inspeção com valores numéricos.
+- **Separação Visual da Legenda**: espaçamento dedicado de 36px entre a legenda superior dos sinais e a área útil do gráfico, impedindo qualquer sobreposição do cursor.
+- **Classificação de Sinais**: agrupamento inteligente que posiciona variáveis ativas no topo com divisor explicativo e ordenação alfabética (A-Z).
 - **Eixo X Dinâmico**: selecione qualquer campo temporal ou utilize o índice sequencial numérico (`#1, #2, #3...`).
-- **Múltiplas Séries Simultâneas**: plote quantas métricas desejar com paleta de cores de alto contraste.
-- **Eixos Y Múltiplos (Y, Y1, Y2)**: plote simultaneamente métricas de ordens de grandeza distintas em até três eixos independentes (Eixo Y esquerdo, Eixo Y1 direito 1 e Eixo Y2 direito 2) sem distorção das curvas.
+- **Eixos Y Múltiplos (Y, Y1, Y2)**: plote simultaneamente métricas de ordens de grandeza distintas em até três eixos independentes:
+  - **Eixo Y**: esquerdo principal (cinza/slate)
+  - **Eixo Y1**: direito 1 (azul celeste `#38bdf8`)
+  - **Eixo Y2**: direito 2 (âmbar/dourado `#fbbf24`)
 - **Ajuste da Escala do Eixo Y**:
   - Modo **Automático** ou **Manual** (com definição independente de valores mínimos e máximos para os eixos Y, Y1 e Y2).
   - Opção **Iniciar no zero (0)**.
-  - Opção **Escala Logarítmica** para dados com picos extremos.
+  - Opção **Escala Logarítmica** para sinais com picos extremos.
 - **Estilos Gráficos**: alternância instantânea entre **Linha**, **Área preenchida**, **Barras** e **Degraus** (*Stepped lines*).
 - **Filtro de Faixa Temporal**: barra de rolagem interativa (*range scrubber*) com atalhos para `100%`, `50%`, `25%` e `Últimos 30` registros.
-- **Exportação**: download do gráfico gerado em imagem **PNG em alta resolução** e modo **Tela Cheia**.
 
 ---
 
@@ -122,21 +129,25 @@ x86_64-w64-mingw32-gcc -Wall -Wextra -O2 -std=c99 -static main.c json_parser.c -
 ## 💻 Como Usar (Linha de Comando)
 
 ```bash
-# Execução básica com log padrão:
+# Execução direta com arquivo CSV (auto-detecta delimitador e colunas numéricas):
+./log_plotter sample_can_bus.csv -x # --html grafico_c.html
+
+# Execução básica com log JSON:
 ./log_plotter sample_iot.json
 
 # Definindo o Eixo X e selecionando métricas específicas:
 ./log_plotter seu_arquivo.json -x timestamp -m temperatura,umidade,pressao_hpa
 
-# Especificando o nome do arquivo HTML de saída:
-./log_plotter seu_arquivo.json --html relatorio_sensores.html
+# No Windows (CMD / PowerShell):
+.\log_plotter.exe sample_can_bus.csv --html grafico.html
+start grafico.html
 ```
 
 ### Parâmetros Suportados:
-- `-i <caminho>`: Caminho do arquivo JSON de entrada.
-- `-x <campo>`: Nome da chave usada como referência horizontal (Eixo X).
-- `-m <m1,m2,...>`: Lista separada por vírgulas das variáveis para o Eixo Y.
-- `--html <saida.html>`: Nome do arquivo HTML autônomo gerado.
+- `<arquivo>` ou `-i <caminho>`: Caminho do arquivo CSV (`.csv`) ou JSON (`.json`, `.log`) de entrada.
+- `-x <campo>`: Nome da coluna/chave usada como referência horizontal (Eixo X).
+- `-m <m1,m2,...>`: Lista separada por vírgulas das variáveis para o gráfico.
+- `--html <saida.html>`: Nome do arquivo HTML autônomo gerado (padrão: `grafico_c.html`).
 
 ---
 
