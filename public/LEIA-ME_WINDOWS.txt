@@ -1,13 +1,24 @@
 ========================================================================
-   LOGPLOTTER EM LINGUAGEM C (v2.6) - PACOTE EXECUTÁVEL PARA WINDOWS 11
+   LOGPLOTTER EM LINGUAGEM C (v2.7) - PACOTE EXECUTÁVEL PARA WINDOWS 11
 ========================================================================
 
 Este pacote contém o executável binário compilado nativamente para Windows 11 / Windows 10 (x86-64),
 estaticamente vinculado (-static), sem necessidade de instalar DLLs externas, compilador, Python ou Node.js.
+E O MELHOR: FUNCIONA 100% OFFLINE, SEM NENHUMA CONEXÃO COM A INTERNET!
 
-NOVIDADES DA VERSÃO 2.6:
--------------------------
-1. Três Eixos Y Independentes (Y, Y1 e Y2):
+NOVIDADES DA VERSÃO 2.7 (100% OFFLINE / STANDALONE):
+----------------------------------------------------
+1. Funcionamento 100% Offline (Sem Internet):
+   - O Chart.js v4 UMD foi embutido diretamente dentro do código binário em C.
+   - O arquivo 'grafico_c.html' gerado é um dashboard único e 100% autônomo (Single-File Dashboard).
+   - Não faz nenhuma chamada externa de rede (zero requisições a CDNs ou APIs).
+   - Abre instantaneamente (0ms de espera DNS) em qualquer computador desconectado da rede, ambiente industrial, bancada automotiva ou notebook em campo.
+   - Utiliza fontes modernas do próprio sistema (Segoe UI, Cascadia Code, Consolas) sem travar esperando o Google Fonts.
+
+2. Seções Retráteis (Accordions) no Painel Lateral:
+   - Seções 'Origem dos Dados', 'Eixo X', 'Estilo do Gráfico' e 'Variáveis Selecionadas' retráteis com botão 'Recolher / Expandir', otimizando o espaço útil do dashboard.
+
+3. Três Eixos Y Independentes (Y, Y1 e Y2):
    - Suporte a plotagem simultânea em até três escalas verticais distintas:
      * Eixo Y: Esquerdo principal (em cinza/slate)
      * Eixo Y1: Direito 1 (em azul celeste #38bdf8)

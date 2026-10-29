@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FieldInfo, MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID } from '../types/log';
 import { PALETTE } from '../utils/jsonParser';
-import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw, ArrowDownAZ } from 'lucide-react';
+import { Check, Search, BarChart3, LineChart, Layers, HelpCircle, ArrowRightLeft, UploadCloud, FolderOpen, FileText, SlidersHorizontal, RotateCcw, ArrowDownAZ, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 
 interface MetricSelectorProps {
   fields: FieldInfo[];
@@ -63,6 +63,33 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   const [search, setSearch] = useState('');
   const [sortSelectedFirst, setSortSelectedFirst] = useState(true);
 
+  // Estados de colapso das seções para reduzir espaço vertical
+  const [openSections, setOpenSections] = useState<{
+    origin: boolean;
+    xAxis: boolean;
+    style: boolean;
+    metrics: boolean;
+  }>({
+    origin: false, // Inicia recolhido para poupar espaço
+    xAxis: false,  // Inicia recolhido para poupar espaço
+    style: false,  // Inicia recolhido para poupar espaço
+    metrics: true, // Aberto por padrão para acesso imediato aos sinais
+  });
+
+  const toggleSection = (section: 'origin' | 'xAxis' | 'style' | 'metrics') => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const allCollapsed = !openSections.origin && !openSections.xAxis && !openSections.style && !openSections.metrics;
+
+  const toggleCollapseAll = () => {
+    if (allCollapsed) {
+      setOpenSections({ origin: true, xAxis: true, style: true, metrics: true });
+    } else {
+      setOpenSections({ origin: false, xAxis: false, style: false, metrics: false });
+    }
+  };
+
   const numericFields = fields.filter(f => f.isNumeric);
   const otherFields = fields.filter(f => !f.isNumeric);
 
@@ -93,99 +120,185 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-5 bg-slate-900/80 border border-slate-800 rounded-xl p-5">
-      {/* 0. Opção de Carregar o Log JSON ou CSV */}
-      <div className="bg-slate-950/70 border border-slate-800/90 rounded-lg p-3">
-        <div className="flex items-center justify-between mb-2">
+    <div
+      className="w-full max-w-[375px] md:w-[375px] flex flex-col gap-2.5 bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-3.5 shadow-sm"
+      style={{ width: '375px' }}
+    >
+      {/* Barra Superior de Ações do Painel Lateral */}
+      <div className="flex items-center justify-between pb-1 px-0.5 border-b border-slate-800/80">
+        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+          <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+          Configurações
+        </span>
+        <button
+          type="button"
+          onClick={toggleCollapseAll}
+          className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono text-slate-400 hover:text-slate-200 bg-slate-950/80 hover:bg-slate-800 rounded border border-slate-800 transition-colors cursor-pointer"
+          title={allCollapsed ? "Expandir todas as seções" : "Recolher todas as seções para economizar espaço"}
+        >
+          {allCollapsed ? (
+            <>
+              <ChevronsUpDown className="w-3 h-3 text-indigo-400" />
+              <span>Expandir</span>
+            </>
+          ) : (
+            <>
+              <ChevronsDownUp className="w-3 h-3 text-indigo-400" />
+              <span>Recolher</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 0. Opção de Carregar o Log JSON ou CSV (Colapsável) */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-lg overflow-hidden transition-all">
+        <button
+          type="button"
+          onClick={() => toggleSection('origin')}
+          className="w-full flex items-center justify-between p-2.5 hover:bg-slate-800/40 transition-colors cursor-pointer text-left"
+        >
           <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-indigo-400" />
-            Origem dos Dados (JSON / CSV)
+            Origem dos Dados
           </span>
-          {totalRecords !== undefined && (
-            <span className="text-[10px] text-indigo-300 font-mono tabular-nums bg-indigo-950/70 border border-indigo-800/60 px-1.5 py-0.5 rounded">
-              {totalRecords} registros
-            </span>
-          )}
-        </div>
+          <div className="flex items-center gap-1.5">
+            {totalRecords !== undefined && (
+              <span className="text-[10px] text-indigo-300 font-mono tabular-nums bg-indigo-950/70 border border-indigo-800/60 px-1.5 py-0.2 rounded">
+                {totalRecords} reg
+              </span>
+            )}
+            {openSections.origin ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            )}
+          </div>
+        </button>
 
-        {datasetName && (
-          <div className="text-xs text-slate-400 font-mono truncate mb-2.5" title={datasetName}>
-            Arquivo atual: <span className="text-slate-200 font-semibold">{datasetName}</span>
+        {openSections.origin && (
+          <div className="p-2.5 pt-1 border-t border-slate-800/70">
+            {datasetName && (
+              <div className="text-xs text-slate-400 font-mono truncate mb-2 mt-1" title={datasetName}>
+                Arquivo: <span className="text-slate-200 font-semibold">{datasetName}</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              {onOpenLoadModal && (
+                <button
+                  type="button"
+                  onClick={onOpenLoadModal}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-colors"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Carregar Arquivo</span>
+                </button>
+              )}
+
+              <label
+                title="Selecionar arquivo .csv, .json, .log direto do seu computador"
+                className="flex items-center justify-center p-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 cursor-pointer transition-colors shrink-0"
+              >
+                <FolderOpen className="w-4 h-4 text-indigo-400" />
+                <input
+                  type="file"
+                  accept=".json,.log,.ndjson,.txt,.csv,application/json,text/csv,text/plain"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+              </label>
+            </div>
           </div>
         )}
-
-        <div className="flex items-center gap-2">
-          {onOpenLoadModal && (
-            <button
-              type="button"
-              onClick={onOpenLoadModal}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-colors"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Carregar Arquivo JSON / CSV</span>
-            </button>
-          )}
-
-          <label
-            title="Selecionar arquivo .csv, .json, .log direto do seu computador"
-            className="flex items-center justify-center p-2 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 cursor-pointer transition-colors shrink-0"
-          >
-            <FolderOpen className="w-4 h-4 text-indigo-400" />
-            <input
-              type="file"
-              accept=".json,.log,.ndjson,.txt,.csv,application/json,text/csv,text/plain"
-              className="hidden"
-              onChange={handleFileInput}
-            />
-          </label>
-        </div>
       </div>
 
-      <div className="h-px bg-slate-800" />
-      {/* 1. X-Axis Configuration */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            1. Eixo X (Referência Horizontal)
-          </label>
-        </div>
-        <select
-          value={xAxisKey}
-          onChange={(e) => onXAxisChange(e.target.value)}
-          className="w-full px-3 py-2 text-sm bg-slate-950 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+      {/* 1. X-Axis Configuration (Colapsável) */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-lg overflow-hidden transition-all">
+        <button
+          type="button"
+          onClick={() => toggleSection('xAxis')}
+          className="w-full flex items-center justify-between p-2.5 hover:bg-slate-800/40 transition-colors cursor-pointer text-left"
         >
-          <option value="_index"># Índice Sequencial (1, 2, 3...)</option>
-          <optgroup label="Campos de Data & Horário Detectados">
-            {fields
-              .filter(f => f.isDateCandidate)
-              .map(f => (
-                <option key={f.key} value={f.key}>
-                  {f.key} (Temporal)
-                </option>
-              ))}
-          </optgroup>
-          <optgroup label="Outros Campos Disponíveis">
-            {fields
-              .filter(f => !f.isDateCandidate)
-              .map(f => (
-                <option key={f.key} value={f.key}>
-                  {f.key} ({f.type})
-                </option>
-              ))}
-          </optgroup>
-        </select>
-        <p className="text-xs text-slate-500 mt-1.5">
-          Determina os rótulos do eixo horizontal do gráfico.
-        </p>
+          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+            1. Eixo X
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-indigo-300 font-mono bg-indigo-950/70 border border-indigo-800/60 px-1.5 py-0.2 rounded truncate max-w-[120px]">
+              {xAxisKey === '_index' ? '# Índice' : (xAxisKey || 'Nenhum')}
+            </span>
+            {openSections.xAxis ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            )}
+          </div>
+        </button>
+
+        {openSections.xAxis && (
+          <div className="p-2.5 pt-1 border-t border-slate-800/70">
+            <select
+              value={xAxisKey}
+              onChange={(e) => onXAxisChange(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 font-mono mt-1"
+            >
+              <option value="_index"># Índice Sequencial (1, 2, 3...)</option>
+              <optgroup label="Campos de Data & Horário Detectados">
+                {fields
+                  .filter(f => f.isDateCandidate)
+                  .map(f => (
+                    <option key={f.key} value={f.key}>
+                      {f.key} (Temporal)
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Outros Campos Disponíveis">
+                {fields
+                  .filter(f => !f.isDateCandidate)
+                  .map(f => (
+                    <option key={f.key} value={f.key}>
+                      {f.key} ({f.type})
+                    </option>
+                  ))}
+              </optgroup>
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Determina os rótulos do eixo horizontal do gráfico.
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="h-px bg-slate-800" />
+      {/* 2. Visual Style & Chart Controls (Colapsável) */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-lg overflow-hidden transition-all">
+        <button
+          type="button"
+          onClick={() => toggleSection('style')}
+          className="w-full flex items-center justify-between p-2.5 hover:bg-slate-800/40 transition-colors cursor-pointer text-left"
+        >
+          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+            2. Estilo do Gráfico
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-indigo-300 font-mono bg-indigo-950/70 border border-indigo-800/60 px-1.5 py-0.2 rounded capitalize">
+              {chartType === 'line' ? 'Linha' : chartType === 'area' ? 'Área' : chartType === 'bar' ? 'Barras' : 'Degraus'}
+            </span>
+            {dualAxis && (
+              <span className="text-[10px] text-sky-400 font-mono bg-sky-950/70 border border-sky-800/60 px-1 py-0.2 rounded">
+                Triplo Y
+              </span>
+            )}
+            {openSections.style ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            )}
+          </div>
+        </button>
 
-      {/* 2. Visual Style & Chart Controls */}
-      <div>
-        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2.5">
-          2. Tipo e Estilo do Gráfico
-        </label>
+        {openSections.style && (
+          <div className="p-2.5 pt-1 border-t border-slate-800/70 flex flex-col gap-2.5">
         
         {/* Chart type tabs */}
         <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg text-xs mb-3">
@@ -380,7 +493,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     placeholder="Auto"
                     value={yAxisScale.minY}
                     onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY: e.target.value === '' ? '' : Number(e.target.value) })}
-                    className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                    className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                    style={{ width: '120px' }}
                   />
                 </div>
                 <div>
@@ -390,7 +504,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     placeholder="Auto"
                     value={yAxisScale.maxY}
                     onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY: e.target.value === '' ? '' : Number(e.target.value) })}
-                    className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                    className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                    style={{ width: '120px' }}
                   />
                 </div>
               </div>
@@ -417,7 +532,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         placeholder="Auto"
                         value={yAxisScale.minY1}
                         onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY1: e.target.value === '' ? '' : Number(e.target.value) })}
-                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                        className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                        style={{ width: '120px' }}
                       />
                     </div>
                     <div>
@@ -427,7 +543,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         placeholder="Auto"
                         value={yAxisScale.maxY1}
                         onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY1: e.target.value === '' ? '' : Number(e.target.value) })}
-                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                        className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-sky-300 font-mono focus:outline-none focus:border-sky-500"
+                        style={{ width: '120px' }}
                       />
                     </div>
                   </div>
@@ -456,7 +573,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         placeholder="Auto"
                         value={yAxisScale.minY2}
                         onChange={(e) => onYAxisScaleChange({ ...yAxisScale, minY2: e.target.value === '' ? '' : Number(e.target.value) })}
-                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
+                        className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
+                        style={{ width: '120px' }}
                       />
                     </div>
                     <div>
@@ -466,7 +584,8 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         placeholder="Auto"
                         value={yAxisScale.maxY2}
                         onChange={(e) => onYAxisScaleChange({ ...yAxisScale, maxY2: e.target.value === '' ? '' : Number(e.target.value) })}
-                        className="w-full px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
+                        className="w-[120px] px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-amber-300 font-mono focus:outline-none focus:border-amber-500"
+                        style={{ width: '120px' }}
                       />
                     </div>
                   </div>
@@ -476,31 +595,56 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
           )}
         </div>
       </div>
+    )}
+  </div>
 
-      <div className="h-px bg-slate-800" />
-
-      {/* 3. Y-Axis Metrics Selector */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            3. Variáveis Selecionadas ({selectedMetrics.length}/{numericFields.length})
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onSelectAllNumeric}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
-            >
-              Todas
-            </button>
-            <span className="text-slate-600">·</span>
-            <button
-              onClick={onClearAllMetrics}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              Limpar
-            </button>
+      {/* 3. Y-Axis Metrics Selector (Colapsável) */}
+      <div className="bg-slate-950/70 border border-slate-800/90 rounded-lg overflow-hidden transition-all flex flex-col min-h-0">
+        <button
+          type="button"
+          onClick={() => toggleSection('metrics')}
+          className="w-full flex items-center justify-between p-2.5 hover:bg-slate-800/40 transition-colors cursor-pointer text-left"
+        >
+          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+            <Check className="w-3.5 h-3.5 text-indigo-400" />
+            3. Variáveis Selecionadas
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono text-indigo-300 bg-indigo-950/70 border border-indigo-800/60 px-1.5 py-0.2 rounded font-semibold">
+              {selectedMetrics.length}/{numericFields.length}
+            </span>
+            {openSections.metrics ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            )}
           </div>
-        </div>
+        </button>
+
+        {openSections.metrics && (
+          <div className="p-2.5 pt-1 border-t border-slate-800/70 flex flex-col">
+            <div className="flex items-center justify-between mb-2 mt-1">
+              <span className="text-[11px] text-slate-400 font-mono">
+                Ativar / desativar sinais:
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onSelectAllNumeric}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium cursor-pointer"
+                >
+                  Todas
+                </button>
+                <span className="text-slate-600">·</span>
+                <button
+                  type="button"
+                  onClick={onClearAllMetrics}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                >
+                  Limpar
+                </button>
+              </div>
+            </div>
 
         {/* Barra de Busca e Ordenação */}
         <div className="flex items-center gap-1.5 mb-2.5">
@@ -534,7 +678,23 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
 
         {/* List of numeric fields */}
         <div className="flex flex-col gap-1.5 max-h-[290px] overflow-y-auto pr-1">
-          {filteredNumeric.length === 0 ? (
+          {numericFields.length === 0 ? (
+            <div className="text-center py-6 px-3 flex flex-col items-center gap-2">
+              <span className="text-xs text-slate-400 font-semibold">Nenhum dado carregado</span>
+              <p className="text-[11px] text-slate-500 leading-tight">
+                Importe um log ou selecione um dos exemplos prontos para exibir os sinais aqui.
+              </p>
+              {onOpenLoadModal && (
+                <button
+                  type="button"
+                  onClick={onOpenLoadModal}
+                  className="mt-1 px-3 py-1 text-xs font-semibold text-indigo-300 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-md transition-colors cursor-pointer"
+                >
+                  Carregar / Exemplos
+                </button>
+              )}
+            </div>
+          ) : filteredNumeric.length === 0 ? (
             <div className="text-center py-6 text-xs text-slate-500">
               Nenhuma variável numérica encontrada com este filtro.
             </div>
@@ -642,8 +802,10 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
             );
           })
           )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 };

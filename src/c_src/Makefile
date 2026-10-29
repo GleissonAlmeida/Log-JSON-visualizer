@@ -16,7 +16,7 @@ $(TARGET): $(OBJS)
 	@echo "Execute com: ./$(TARGET) sample_iot.json"
 	@echo "=================================================="
 
-%.o: %.c json_parser.h
+%.o: %.c json_parser.h chart_js_embedded.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

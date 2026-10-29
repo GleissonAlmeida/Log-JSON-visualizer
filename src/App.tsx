@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseJsonLog, PALETTE } from './utils/jsonParser';
-import { SAMPLE_DATASETS } from './data/sampleDatasets';
-import { MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID } from './types/log';
+import { SAMPLE_DATASETS, SampleDataset } from './data/sampleDatasets';
+import { MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID, ParseResult } from './types/log';
 import { ChartViewer } from './components/ChartViewer';
 import { MetricSelector } from './components/MetricSelector';
 import { JsonInputModal } from './components/JsonInputModal';
@@ -13,29 +13,30 @@ import {
   Package,
   BookOpen,
   ExternalLink,
+  Sparkles,
+  Trash2,
 } from 'lucide-react';
+
+const EMPTY_PARSE_RESULT: ParseResult = {
+  records: [],
+  fields: [],
+  detectedXKey: '',
+  detectedYKeys: [],
+  totalRecords: 0,
+  filename: '',
+  parseTimeMs: 0,
+};
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocOpen, setIsDocOpen] = useState(false);
 
-  // Initial parse result
-  const [parseResult, setParseResult] = useState(() => {
-    const initialJson = JSON.stringify(SAMPLE_DATASETS[0].data, null, 2);
-    return parseJsonLog(initialJson, SAMPLE_DATASETS[0].name);
-  });
+  // Initial parse result: Inicia sem dados carregados (conforme solicitado pelo usuário)
+  const [parseResult, setParseResult] = useState<ParseResult>(EMPTY_PARSE_RESULT);
 
   // Chart configuration state
-  const [xAxisKey, setXAxisKey] = useState<string>(parseResult.detectedXKey);
-  const [selectedMetrics, setSelectedMetrics] = useState<MetricConfig[]>(() => {
-    // Select first 3 metrics with second assigned to Y1 and third assigned to Y2
-    return parseResult.detectedYKeys.map((key, i) => ({
-      key,
-      label: key,
-      color: PALETTE[i % PALETTE.length],
-      yAxis: i === 1 ? 'y1' : (i === 2 ? 'y2' : 'y'),
-    }));
-  });
+  const [xAxisKey, setXAxisKey] = useState<string>('');
+  const [selectedMetrics, setSelectedMetrics] = useState<MetricConfig[]>([]);
 
   const [chartType, setChartType] = useState<GlobalChartType>('line');
   const [tension, setTension] = useState<number>(0.25);
@@ -59,9 +60,9 @@ export default function App() {
   });
 
   // Range window slider [start, end]
-  const [range, setRange] = useState<[number, number]>([0, parseResult.records.length - 1]);
+  const [range, setRange] = useState<[number, number]>([0, 0]);
 
-  const [datasetName, setDatasetName] = useState<string>(SAMPLE_DATASETS[0].name);
+  const [datasetName, setDatasetName] = useState<string>('');
 
   // Direct file loader
   const handleDirectFile = (file: File) => {
@@ -77,14 +78,29 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  // Handler to load new JSON content
+  // Handler to load any predefined sample
+  const handleSelectSample = (sample: SampleDataset) => {
+    const raw = sample.rawString || JSON.stringify(sample.data, null, 2);
+    handleLoadData(raw, sample.name);
+  };
+
+  // Reset back to clean initial state without data
+  const handleClearData = () => {
+    setParseResult(EMPTY_PARSE_RESULT);
+    setDatasetName('');
+    setXAxisKey('');
+    setSelectedMetrics([]);
+    setRange([0, 0]);
+  };
+
+  // Handler to load new JSON/CSV content
   const handleLoadData = (jsonStr: string, name?: string) => {
     try {
       const parsed = parseJsonLog(jsonStr, name || 'Log Carregado');
       setParseResult(parsed);
       setDatasetName(name || 'Log Personalizado');
       setXAxisKey(parsed.detectedXKey);
-      setRange([0, parsed.records.length - 1]);
+      setRange([0, Math.max(0, parsed.records.length - 1)]);
 
       const newMetrics: MetricConfig[] = parsed.detectedYKeys.map((key, i) => ({
         key,
@@ -179,12 +195,32 @@ export default function App() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {parseResult.records.length > 0 && (
+            <button
+              onClick={handleClearData}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 rounded-lg transition-colors shadow-sm cursor-pointer"
+              title="Descarregar dados atuais e retornar à tela inicial limpa"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Limpar Dados</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-300 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 rounded-lg transition-colors shadow-sm cursor-pointer"
+            title="Abrir catálogo com todos os exemplos prontos para teste"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Exemplos ({SAMPLE_DATASETS.length})</span>
+          </button>
+
           <a
             href="/grafico_c.html"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-lg transition-colors shadow-sm"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-lg transition-colors shadow-sm"
             title="Abrir diretamente o arquivo grafico_c.html exportado pelo log_plotter.exe"
           >
             <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
@@ -192,40 +228,40 @@ export default function App() {
           </a>
 
           <a
-            href="/log_plotter.exe?v=2.6.0"
+            href="/log_plotter.exe?v=2.7.0"
             download="log_plotter.exe"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
-            title="Download do executável log_plotter.exe v2.6 compilado para Windows 11 com suporte a CSV, JSON, Triplo Eixo Y/Y1/Y2, Cursor Eixo X e Exportação PNG"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
+            title="Download do executável log_plotter.exe v2.7 100% Offline (com Chart.js embutido, sem necessidade de internet)"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Baixar .EXE (v2.6)</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Baixar .EXE (Offline v2.7)</span>
           </a>
 
           <a
-            href="/log_plotter_windows11.zip?v=2.6.0"
+            href="/log_plotter_windows11.zip?v=2.7.0"
             download="log_plotter_windows11.zip"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors shadow-sm"
-            title="Download do pacote .ZIP atualizado (v2.6) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors shadow-sm"
+            title="Download do pacote .ZIP atualizado (v2.7 100% Offline) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
           >
             <Package className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Pacote .ZIP (v2.6)</span>
+            <span>Pacote .ZIP</span>
           </a>
 
           <button
             onClick={() => setIsDocOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm cursor-pointer"
             title="Abrir documentação estilo GitHub (README.md)"
           >
             <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Documentação</span>
+            <span>Docs</span>
           </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors cursor-pointer"
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            <span>Carregar Log (JSON / CSV)</span>
+            <span>Carregar Log</span>
           </button>
         </div>
       </header>
@@ -282,6 +318,8 @@ export default function App() {
               showCursor={showCursor}
               onToggleCursor={() => setShowCursor(!showCursor)}
               yAxisScale={yAxisScale}
+              onOpenLoadModal={() => setIsModalOpen(true)}
+              onSelectSample={handleSelectSample}
             />
           </div>
         </div>

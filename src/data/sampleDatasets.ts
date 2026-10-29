@@ -88,35 +88,119 @@ function generateWearableData() {
   return wearableLogs;
 }
 
+function generateIndustrialScadaData() {
+  const scadaLogs = [];
+  const baseTime = new Date('2026-10-24T14:00:00Z').getTime();
+  for (let i = 0; i < 80; i++) {
+    const timeStr = new Date(baseTime + i * 15000).toISOString().substring(11, 19);
+    const rpm = Math.round(1740 + Math.sin(i / 6) * 55 + (Math.random() - 0.5) * 12);
+    const currentA = Number((18.4 + (rpm - 1700) * 0.08 + (Math.random() - 0.5) * 0.8).toFixed(2));
+    const voltageV = Number((380.2 + Math.cos(i / 10) * 4.2 + (Math.random() - 0.5) * 0.9).toFixed(1));
+    const windingTempC = Number((62.0 + (i * 0.22) + Math.sin(i / 8) * 2.5).toFixed(1));
+    const powerFactor = Number((0.88 + Math.cos(i / 12) * 0.04).toFixed(3));
+    scadaLogs.push({
+      horario: timeStr,
+      motor_id: 'MOTOR-IND-WEG-W22',
+      rotacao_rpm: rpm,
+      corrente_a: currentA,
+      tensao_v: voltageV,
+      temp_enrolamento_c: windingTempC,
+      fator_potencia: powerFactor,
+    });
+  }
+  return scadaLogs;
+}
+
+function generateDroneTelemetryData() {
+  const droneLogs = [];
+  const baseTime = new Date('2026-10-24T16:30:00Z').getTime();
+  for (let i = 0; i < 60; i++) {
+    const timeStr = new Date(baseTime + i * 1000).toISOString().substring(11, 19);
+    const altitude = Number((12.5 + Math.sin(i / 8) * 8.2 + i * 0.4).toFixed(1));
+    const speed = Number((18.2 + Math.cos(i / 6) * 6.5 + (Math.random() - 0.5) * 1.5).toFixed(1));
+    const pitch = Number((Math.sin(i / 4) * 14.5 + (Math.random() - 0.5) * 2.0).toFixed(1));
+    const roll = Number((Math.cos(i / 5) * 11.2 + (Math.random() - 0.5) * 1.8).toFixed(1));
+    const batteryPct = Number(Math.max(8, 98 - i * 0.4).toFixed(1));
+    const windSpeedMs = Number((4.5 + Math.sin(i / 9) * 2.8 + (Math.random() - 0.5) * 0.8).toFixed(1));
+    droneLogs.push({
+      tempo: timeStr,
+      altitude_m: altitude,
+      velocidade_kmh: speed,
+      inclinacao_pitch_deg: pitch,
+      rolagem_roll_deg: roll,
+      bateria_pct: batteryPct,
+      vento_ms: windSpeedMs,
+    });
+  }
+  return droneLogs;
+}
+
 import { CAN_BUS_RECORDS } from './canBusData';
+
+function generateCanBusCsv(): string {
+  const headers = ['#', 'BrakeSwitch', 'WheelBasedVehicleSpeed', 'curr_gear', 'sel_gear'];
+  const lines = [headers.join(',')];
+  for (const r of CAN_BUS_RECORDS) {
+    lines.push([
+      r['#'] !== undefined ? r['#'] : '',
+      r['BrakeSwitch'] !== undefined ? r['BrakeSwitch'] : '',
+      r['WheelBasedVehicleSpeed'] !== undefined ? r['WheelBasedVehicleSpeed'] : '',
+      r['curr_gear'] !== undefined ? r['curr_gear'] : '',
+      r['sel_gear'] !== undefined ? r['sel_gear'] : '',
+    ].join(','));
+  }
+  return lines.join('\n');
+}
 
 export const SAMPLE_DATASETS: SampleDataset[] = [
   {
     id: 'can-bus-vehicle',
-    name: 'Telemetria Veicular CAN Bus (LOG_99fc1f91)',
-    description: '1450 registros com amostra (#), BrakeSwitch, WheelBasedVehicleSpeed, marcha atual e selecionada.',
+    name: 'Telemetria Veicular CAN Bus (JSONL)',
+    description: '1450 registros automotivos com freio (BrakeSwitch), velocidade das rodas, marcha atual e selecionada.',
     badge: 'CAN Bus & Automotivo',
     data: CAN_BUS_RECORDS,
   },
   {
+    id: 'can-bus-csv',
+    name: 'Telemetria CAN Bus Formato CSV (sample_can_bus.csv)',
+    description: '1450 registros em formato CSV com separador por vírgula, índice sequencial # e sinais veiculares esparsos.',
+    badge: 'Tabela CSV',
+    data: CAN_BUS_RECORDS,
+    rawString: generateCanBusCsv(),
+  },
+  {
+    id: 'industrial-scada',
+    name: 'Monitoramento SCADA & Motores Elétricos',
+    description: '80 registros de telemetria industrial: rotação (RPM), corrente (A), tensão (V), temperatura de enrolamento (°C) e fator de potência.',
+    badge: 'SCADA & Motores',
+    data: generateIndustrialScadaData(),
+  },
+  {
     id: 'iot-sensors',
     name: 'Telemetria IoT & Sensores Industriais',
-    description: 'Log de temperatura, umidade, pressão atmosférica, nível de bateria e vibração RMS.',
+    description: '60 registros de temperatura, umidade, pressão atmosférica, nível de bateria e vibração RMS.',
     badge: 'Hardware & IoT',
     data: generateTimeSeries(),
   },
   {
     id: 'server-metrics',
     name: 'Servidor Web & Performance da API',
-    description: 'Métricas de requisições por segundo, uso de CPU, consumo de memória e latência P95.',
+    description: '70 registros de métricas de requisições por segundo (RPS), CPU %, memória MB, latência P95 e taxa de erros.',
     badge: 'DevOps & Cloud',
     data: generateServerData(),
   },
   {
     id: 'wearable-fitness',
     name: 'Atividade Física & Bio-Sensores',
-    description: 'Registro de frequência cardíaca, velocidade, cadência de passos e altitude.',
+    description: '50 registros com frequência cardíaca (BPM), velocidade (km/h), cadência de passos e altitude.',
     badge: 'Saúde & Wearable',
     data: generateWearableData(),
+  },
+  {
+    id: 'drone-telemetry',
+    name: 'Telemetria de Voo Drone / VANT',
+    description: '60 amostras de dinâmica de voo: altitude (m), velocidade (km/h), inclinação pitch/roll, bateria % e vento (m/s).',
+    badge: 'Aeroespacial & Drones',
+    data: generateDroneTelemetryData(),
   },
 ];

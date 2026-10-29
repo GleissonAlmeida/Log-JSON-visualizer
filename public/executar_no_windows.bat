@@ -2,8 +2,8 @@
 chcp 65001 > nul
 cls
 echo ====================================================================
-echo     LOGPLOTTER C (C99) - EXECUTAVEL PARA WINDOWS 11 (v2.5)
-echo     [Suporte a CSV & JSON com Cursor Eixo X e Exportacao PNG]
+echo     LOGPLOTTER C (C99) - EXECUTAVEL PARA WINDOWS 11 (v2.7)
+echo     [100%% OFFLINE - Funciona sem internet | CSV e JSON | Eixos Y, Y1, Y2]
 echo ====================================================================
 echo.
 if exist "sample_can_bus.csv" (

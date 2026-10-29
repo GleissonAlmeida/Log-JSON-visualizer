@@ -54,6 +54,7 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
   - Opção **Escala Logarítmica** para sinais com picos extremos.
 - **Estilos Gráficos**: alternância instantânea entre **Linha**, **Área preenchida**, **Barras** e **Degraus** (*Stepped lines*).
 - **Filtro de Faixa Temporal**: barra de rolagem interativa (*range scrubber*) com atalhos para `100%`, `50%`, `25%` e `Últimos 30` registros.
+- **Painel Lateral com Seções Retráteis (Accordions)**: seções *Origem dos Dados*, *Eixo X*, *Estilo do Gráfico* e *Variáveis Selecionadas* podem ser recolhidas ou expandidas individualmente ou via atalho global *Recolher / Expandir*, reduzindo em mais de 60% o espaço vertical e eliminando a rolagem excessiva.
 
 ---
 

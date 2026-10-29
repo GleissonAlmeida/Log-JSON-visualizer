@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include "json_parser.h"
+#include "chart_js_embedded.h"
 
 #define MAX_METRICS 32
 #define MAX_LABEL_LEN 64
@@ -140,22 +141,24 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "  <meta charset=\"UTF-8\" />\n");
     fprintf(fp, "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n");
     fprintf(fp, "  <title>LogPlotter C &bull; Gráfico Interativo</title>\n");
-    fprintf(fp, "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n");
-    fprintf(fp, "  <link href=\"https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n");
+    fprintf(fp, "  <!-- Chart.js v4 UMD Embutido Diretamente (100%% Offline / Autonomo / Sem Internet) -->\n");
+    fprintf(fp, "  <script>\n");
+    fwrite(CHART_JS_DATA, 1, CHART_JS_SIZE, fp);
+    fprintf(fp, "\n  </script>\n");
     fprintf(fp, "  <style>\n");
     fprintf(fp, "    * { box-sizing: border-box; margin: 0; padding: 0; }\n");
-    fprintf(fp, "    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }\n");
+    fprintf(fp, "    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #020617; color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }\n");
     fprintf(fp, "    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid #1e293b; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); }\n");
     fprintf(fp, "    .header-left { display: flex; align-items: center; gap: 12px; }\n");
     fprintf(fp, "    .logo-box { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: #fff; }\n");
-    fprintf(fp, "    .badge-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-weight: 600; }\n");
-    fprintf(fp, "    .dataset-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; background: #0f172a; padding: 3px 10px; border-radius: 6px; border: 1px solid #334155; }\n");
+    fprintf(fp, "    .badge-tag { font-size: 10px; font-family: 'JetBrains Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace; padding: 2px 8px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }\n");
+    fprintf(fp, "    .dataset-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace; color: #cbd5e1; background: #0f172a; padding: 3px 10px; border-radius: 6px; border: 1px solid #334155; }\n");
     fprintf(fp, "    .header-right { display: flex; align-items: center; gap: 8px; }\n");
     fprintf(fp, "    .btn-head { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }\n");
     fprintf(fp, "    .btn-head:hover { background: #334155; color: #fff; }\n");
     fprintf(fp, "    .btn-head.primary { background: #4f46e5; color: #fff; border-color: #4338ca; }\n");
     fprintf(fp, "    .btn-head.primary:hover { background: #4338ca; }\n");
-    fprintf(fp, "    .app-container { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px 24px; max-width: 1600px; margin: 0 auto; width: 100%%; flex: 1; }\n");
+    fprintf(fp, "    .app-container { display: grid; grid-template-columns: 375px 1fr; gap: 16px; padding: 16px 24px; max-width: 1600px; margin: 0 auto; width: 100%%; flex: 1; }\n");
     fprintf(fp, "    @media (max-width: 1024px) { .app-container { grid-template-columns: 1fr; padding: 12px; } }\n");
     fprintf(fp, "    .panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }\n");
     fprintf(fp, "    .chart-panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }\n");
@@ -188,6 +191,13 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    .btn-sort.active { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }\n");
     fprintf(fp, "    .section-divider { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid #1e293b; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }\n");
     fprintf(fp, "    .badge-zoh { font-size: 9px; background: #1e1b4b; color: #a5b4fc; padding: 1px 5px; border-radius: 4px; border: 1px solid #4338ca; font-family: 'JetBrains Mono'; }\n");
+    fprintf(fp, "    .acc-card { background: #070d19; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }\n");
+    fprintf(fp, "    .acc-card summary { padding: 9px 12px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; }\n");
+    fprintf(fp, "    .acc-card summary::-webkit-details-marker { display: none; }\n");
+    fprintf(fp, "    .acc-card summary:hover { background: #0f172a; color: #cbd5e1; }\n");
+    fprintf(fp, "    .acc-card summary .chevron { transition: transform 0.2s; font-size: 11px; color: #64748b; font-family: monospace; }\n");
+    fprintf(fp, "    .acc-card[open] summary .chevron { transform: rotate(90deg); color: #818cf8; }\n");
+    fprintf(fp, "    .acc-body { padding: 10px 12px; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px; }\n");
     fprintf(fp, "    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }\n");
     fprintf(fp, "    .modal-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; max-width: 620px; width: 100%%; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }\n");
     fprintf(fp, "    .modal-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; }\n");
@@ -200,7 +210,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "      <div class=\"logo-box\">\n");
     fprintf(fp, "        <span style=\"color: #818cf8; font-size: 18px;\">&#9889;</span>\n");
     fprintf(fp, "        <span>LogPlotter C</span>\n");
-    fprintf(fp, "        <span class=\"badge-tag\">C99 + Chart.js</span>\n");
+    fprintf(fp, "        <span class=\"badge-tag\">100%%%% Offline &bull; C99 + Chart.js</span>\n");
     fprintf(fp, "      </div>\n");
     fprintf(fp, "      <div class=\"dataset-pill\">\n");
     fprintf(fp, "        <span>&#128196;</span>\n");
@@ -222,37 +232,39 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     /* ================= PAINEL LATERAL ESQUERDO ================= */
     fprintf(fp, "    <div class=\"panel\">\n");
+    fprintf(fp, "      <div style=\"display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid #1e293b; margin-bottom: 6px;\">\n");
+    fprintf(fp, "        <span style=\"font-size: 11px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono';\">CONFIGURAÇÕES</span>\n");
+    fprintf(fp, "        <button class=\"btn-tool\" onclick=\"toggleAllAccordions()\" style=\"font-size: 10px; padding: 2px 8px;\">Recolher / Expandir</button>\n");
+    fprintf(fp, "      </div>\n");
 
     /* 0. Carregar Arquivo JSON ou CSV */
-    fprintf(fp, "      <div style=\"background: #070d19; border: 1px solid #1e293b; border-radius: 8px; padding: 12px;\">\n");
-    fprintf(fp, "        <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;\">\n");
-    fprintf(fp, "          <span class=\"title-sec\" style=\"margin-bottom: 0;\">ARQUIVO DE LOG (JSON / CSV)</span>\n");
-    fprintf(fp, "          <span id=\"lblFileRecords\" style=\"font-size: 10px; color: #818cf8; font-family: 'JetBrains Mono';\">%d registros</span>\n", ds->num_points);
+    fprintf(fp, "      <details class=\"acc-card\" id=\"accOrigin\">\n");
+    fprintf(fp, "        <summary><span>&#128196; Origem dos Dados</span><span style=\"display: flex; align-items: center; gap: 6px;\"><span id=\"lblFileRecords\" style=\"font-size: 10px; color: #818cf8; font-family: 'JetBrains Mono';\">%d reg</span><span class=\"chevron\">&#9654;</span></span></summary>\n", ds->num_points);
+    fprintf(fp, "        <div class=\"acc-body\">\n");
+    fprintf(fp, "          <label style=\"display: flex; align-items: center; justify-content: center; gap: 8px; background: #4f46e5; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; transition: background 0.15s;\">\n");
+    fprintf(fp, "            <span>&#128194; Carregar Novo Log (JSON / CSV)</span>\n");
+    fprintf(fp, "            <input type=\"file\" id=\"fileJsonUpload\" accept=\".json,.log,.txt,.csv\" style=\"display: none;\" onchange=\"loadNewJsonFile(event)\">\n");
+    fprintf(fp, "          </label>\n");
     fprintf(fp, "        </div>\n");
-    fprintf(fp, "        <label style=\"display: flex; align-items: center; justify-content: center; gap: 8px; background: #4f46e5; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; transition: background 0.15s;\">\n");
-    fprintf(fp, "          <span>&#128194; Carregar Novo Log (JSON / CSV)</span>\n");
-    fprintf(fp, "          <input type=\"file\" id=\"fileJsonUpload\" accept=\".json,.log,.txt,.csv\" style=\"display: none;\" onchange=\"loadNewJsonFile(event)\">\n");
-    fprintf(fp, "        </label>\n");
-    fprintf(fp, "      </div>\n");
-
-    fprintf(fp, "      <hr style=\"border: 0; border-top: 1px solid #1e293b; margin: 2px 0;\" />\n");
+    fprintf(fp, "      </details>\n");
 
     /* 1. Eixo X */
-    fprintf(fp, "      <div>\n");
-    fprintf(fp, "        <div class=\"title-sec\">1. EIXO X (REFERÊNCIA HORIZONTAL)</div>\n");
-    fprintf(fp, "        <select id=\"selectX\" onchange=\"updateChart()\">\n");
-    fprintf(fp, "          <option value=\"%s\" selected>%s (Temporal)</option>\n", ds->x_key, ds->x_key);
-    fprintf(fp, "          <option value=\"_index\"># Índice Sequencial</option>\n");
-    fprintf(fp, "        </select>\n");
-    fprintf(fp, "        <div class=\"subtext\">Determina os rótulos do eixo horizontal do gráfico.</div>\n");
-    fprintf(fp, "      </div>\n");
-
-    fprintf(fp, "      <hr style=\"border: 0; border-top: 1px solid #1e293b; margin: 2px 0;\" />\n");
+    fprintf(fp, "      <details class=\"acc-card\" id=\"accX\">\n");
+    fprintf(fp, "        <summary><span>&#9881; 1. Eixo X</span><span style=\"display: flex; align-items: center; gap: 6px;\"><span style=\"font-size: 10px; color: #818cf8; font-family: 'JetBrains Mono';\">%s</span><span class=\"chevron\">&#9654;</span></span></summary>\n", ds->x_key);
+    fprintf(fp, "        <div class=\"acc-body\">\n");
+    fprintf(fp, "          <select id=\"selectX\" onchange=\"updateChart()\">\n");
+    fprintf(fp, "            <option value=\"%s\" selected>%s (Temporal)</option>\n", ds->x_key, ds->x_key);
+    fprintf(fp, "            <option value=\"_index\"># Índice Sequencial</option>\n");
+    fprintf(fp, "          </select>\n");
+    fprintf(fp, "          <div class=\"subtext\">Determina os rótulos do eixo horizontal do gráfico.</div>\n");
+    fprintf(fp, "        </div>\n");
+    fprintf(fp, "      </details>\n");
 
     /* 2. Tipo e Estilo do Gráfico */
-    fprintf(fp, "      <div>\n");
-    fprintf(fp, "        <div class=\"title-sec\">2. TIPO E ESTILO DO GRÁFICO</div>\n");
-    fprintf(fp, "        <div class=\"btn-group\">\n");
+    fprintf(fp, "      <details class=\"acc-card\" id=\"accStyle\">\n");
+    fprintf(fp, "        <summary><span>&#128200; 2. Estilo do Gráfico</span><span class=\"chevron\">&#9654;</span></summary>\n");
+    fprintf(fp, "        <div class=\"acc-body\">\n");
+    fprintf(fp, "          <div class=\"btn-group\">\n");
     fprintf(fp, "          <button class=\"btn-type active\" id=\"btnLine\" onclick=\"setChartType('line')\">Linha</button>\n");
     fprintf(fp, "          <button class=\"btn-type\" id=\"btnArea\" onclick=\"setChartType('area')\">Área</button>\n");
     fprintf(fp, "          <button class=\"btn-type\" id=\"btnBar\" onclick=\"setChartType('bar')\">Barras</button>\n");
@@ -291,34 +303,31 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "          <div id=\"boxManualScale\" style=\"display: none; background: #070d19; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; flex-direction: column; gap: 6px;\">\n");
     fprintf(fp, "            <div style=\"font-size: 10px; color: #94a3b8; font-weight: 600;\">Limites Eixo Y (Esquerdo):</div>\n");
     fprintf(fp, "            <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
-    fprintf(fp, "              <input type=\"number\" id=\"inpMinY\" placeholder=\"Mín Y\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px;\">\n");
-    fprintf(fp, "              <input type=\"number\" id=\"inpMaxY\" placeholder=\"Máx Y\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px;\">\n");
+    fprintf(fp, "              <input type=\"number\" id=\"inpMinY\" placeholder=\"Mín Y\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px;\">\n");
+    fprintf(fp, "              <input type=\"number\" id=\"inpMaxY\" placeholder=\"Máx Y\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px;\">\n");
     fprintf(fp, "            </div>\n");
     fprintf(fp, "            <div id=\"boxY1Limits\" style=\"margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;\">\n");
     fprintf(fp, "              <div style=\"font-size: 10px; color: #38bdf8; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y1 (Direito 1):</div>\n");
     fprintf(fp, "              <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
-    fprintf(fp, "                <input type=\"number\" id=\"inpMinY1\" placeholder=\"Mín Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
-    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY1\" placeholder=\"Máx Y1\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMinY1\" placeholder=\"Mín Y1\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY1\" placeholder=\"Máx Y1\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px; color: #38bdf8;\">\n");
     fprintf(fp, "              </div>\n");
     fprintf(fp, "            </div>\n");
     fprintf(fp, "            <div id=\"boxY2Limits\" style=\"margin-top: 4px; padding-top: 4px; border-top: 1px solid #1e293b;\">\n");
     fprintf(fp, "              <div style=\"font-size: 10px; color: #fbbf24; font-weight: 600; margin-bottom: 4px;\">Limites Eixo Y2 (Direito 2):</div>\n");
     fprintf(fp, "              <div style=\"display: grid; grid-template-columns: 1fr 1fr; gap: 6px;\">\n");
-    fprintf(fp, "                <input type=\"number\" id=\"inpMinY2\" placeholder=\"Mín Y2\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
-    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY2\" placeholder=\"Máx Y2\" oninput=\"updateChart()\" style=\"font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMinY2\" placeholder=\"Mín Y2\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
+    fprintf(fp, "                <input type=\"number\" id=\"inpMaxY2\" placeholder=\"Máx Y2\" oninput=\"updateChart()\" style=\"width: 120px; font-size: 11px; padding: 4px 6px; color: #fbbf24;\">\n");
     fprintf(fp, "              </div>\n");
     fprintf(fp, "            </div>\n");
     fprintf(fp, "          </div>\n");
     fprintf(fp, "        </div>\n");
-    fprintf(fp, "      </div>\n");
-    fprintf(fp, "      <hr style=\"border: 0; border-top: 1px solid #1e293b; margin: 2px 0;\" />\n");
+    fprintf(fp, "      </details>\n\n");
 
     /* 3. Variáveis Selecionadas */
-    fprintf(fp, "      <div style=\"flex: 1; display: flex; flex-direction: column;\">\n");
-    fprintf(fp, "        <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;\">\n");
-    fprintf(fp, "          <div class=\"title-sec\" style=\"margin-bottom: 0;\">3. VARIÁVEIS SELECIONADAS (<span id=\"cntSelected\">0</span>/%d)</div>\n", ds->num_metrics);
-    fprintf(fp, "          <div style=\"font-size: 11px;\"><a href=\"#\" onclick=\"selectAllMetrics(); return false;\" style=\"color: #6366f1; text-decoration: none;\">Todas</a> &bull; <a href=\"#\" onclick=\"clearMetrics(); return false;\" style=\"color: #64748b; text-decoration: none;\">Limpar</a></div>\n");
-    fprintf(fp, "        </div>\n");
+    fprintf(fp, "      <details class=\"acc-card\" id=\"accMetrics\" open style=\"flex: 1; display: flex; flex-direction: column;\">\n");
+    fprintf(fp, "        <summary><span>&#9989; 3. Variáveis Selecionadas (<span id=\"cntSelected\">0</span>/%d)</span><span style=\"display: flex; align-items: center; gap: 8px;\"><span style=\"font-size: 11px;\"><a href=\"#\" onclick=\"event.stopPropagation(); selectAllMetrics(); return false;\" style=\"color: #818cf8; text-decoration: none;\">Todas</a> &bull; <a href=\"#\" onclick=\"event.stopPropagation(); clearMetrics(); return false;\" style=\"color: #64748b; text-decoration: none;\">Limpar</a></span><span class=\"chevron\">&#9654;</span></span></summary>\n", ds->num_metrics);
+    fprintf(fp, "        <div class=\"acc-body\" style=\"flex: 1; display: flex; flex-direction: column;\">\n");
 
     fprintf(fp, "        <div style=\"display: flex; gap: 6px; margin-bottom: 8px;\">\n");
     fprintf(fp, "          <input type=\"text\" id=\"txtFilter\" placeholder=\"Filtrar variáveis...\" oninput=\"filterMetricsList()\" style=\"flex: 1; font-size: 11px; padding: 6px 10px;\">\n");
@@ -327,7 +336,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     fprintf(fp, "        <div class=\"metric-list\" id=\"metricList\">\n");
 
-    const char *palette[] = { "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4", "#ef4444" };
+    const char *palette[] = { "#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4", "#ef4444", "#14b8a6", "#f97316", "#6366f1" };
     int num_palette = sizeof(palette) / sizeof(palette[0]);
 
     for (int m = 0; m < ds->num_metrics; m++) {
@@ -355,6 +364,7 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
 
     fprintf(fp, "        </div>\n");
     fprintf(fp, "      </div>\n");
+    fprintf(fp, "      </details>\n");
     fprintf(fp, "    </div>\n");
 
     /* ================= PAINEL DO GRÁFICO (DIREITO) ================= */
@@ -445,6 +455,11 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "    let cursorEnabled = true;\n");
     fprintf(fp, "    let cursorIdx = null;\n");
     fprintf(fp, "    let isPinned = false;\n\n");
+    fprintf(fp, "    function toggleAllAccordions() {\n");
+    fprintf(fp, "      const cards = document.querySelectorAll('.acc-card');\n");
+    fprintf(fp, "      const anyOpen = Array.from(cards).some(c => c.open);\n");
+    fprintf(fp, "      cards.forEach(c => c.open = !anyOpen);\n");
+    fprintf(fp, "    }\n\n");
 
     fprintf(fp, "    const legendSpacingPlugin = {\n");
     fprintf(fp, "      id: 'legendSpacingPlugin',\n");
@@ -599,12 +614,13 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            label: key,\n");
     fprintf(fp, "            data: seriesData,\n");
     fprintf(fp, "            borderColor: cfg.color,\n");
-    fprintf(fp, "            backgroundColor: (isArea ? cfg.color + '33' : (chartType === 'bar' ? cfg.color + '99' : cfg.color)),\n");
+    fprintf(fp, "            backgroundColor: (isArea ? cfg.color + '25' : (chartType === 'bar' ? cfg.color + '90' : cfg.color + '25')),\n");
     fprintf(fp, "            borderWidth: 2.2,\n");
     fprintf(fp, "            tension: isStepped ? 0 : tension,\n");
     fprintf(fp, "            stepped: isStepped ? 'before' : false,\n");
     fprintf(fp, "            pointRadius: showPoints ? 3.5 : 0,\n");
     fprintf(fp, "            pointHoverRadius: 6,\n");
+    fprintf(fp, "            pointBackgroundColor: cfg.color,\n");
     fprintf(fp, "            pointBorderColor: '#ffffff',\n");
     fprintf(fp, "            pointBorderWidth: 1.5,\n");
     fprintf(fp, "            fill: isArea,\n");
@@ -640,13 +656,61 @@ static int export_interactive_html(const Dataset *ds, const char *output_file) {
     fprintf(fp, "            }\n");
     fprintf(fp, "          },\n");
     fprintf(fp, "          plugins: {\n");
-    fprintf(fp, "            legend: { position: 'top', align: 'end', labels: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 }, usePointStyle: true, boxWidth: 10 } }\n");
+    fprintf(fp, "            legend: {\n");
+    fprintf(fp, "              position: 'top',\n");
+    fprintf(fp, "              align: 'end',\n");
+    fprintf(fp, "              labels: {\n");
+    fprintf(fp, "                color: '#cbd5e1',\n");
+    fprintf(fp, "                font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 },\n");
+    fprintf(fp, "                boxWidth: 12,\n");
+    fprintf(fp, "                boxHeight: 12,\n");
+    fprintf(fp, "                usePointStyle: true,\n");
+    fprintf(fp, "                pointStyle: 'circle',\n");
+    fprintf(fp, "                padding: 18\n");
+    fprintf(fp, "              }\n");
+    fprintf(fp, "            },\n");
+    fprintf(fp, "            tooltip: {\n");
+    fprintf(fp, "              backgroundColor: 'rgba(15, 23, 42, 0.95)',\n");
+    fprintf(fp, "              titleColor: '#f8fafc',\n");
+    fprintf(fp, "              bodyColor: '#e2e8f0',\n");
+    fprintf(fp, "              borderColor: 'rgba(51, 65, 85, 0.8)',\n");
+    fprintf(fp, "              borderWidth: 1,\n");
+    fprintf(fp, "              padding: 12,\n");
+    fprintf(fp, "              cornerRadius: 8,\n");
+    fprintf(fp, "              boxPadding: 6,\n");
+    fprintf(fp, "              titleFont: { family: 'Plus Jakarta Sans', size: 13, weight: 600 },\n");
+    fprintf(fp, "              bodyFont: { family: 'JetBrains Mono', size: 12 },\n");
+    fprintf(fp, "              callbacks: {\n");
+    fprintf(fp, "                title: (items) => {\n");
+    fprintf(fp, "                  if (!items.length) return '';\n");
+    fprintf(fp, "                  const idx = items[0].dataIndex;\n");
+    fprintf(fp, "                  const r = filtered[idx];\n");
+    fprintf(fp, "                  return xKey === '_index' ? `Registro #${rangeStart + idx + 1}` : `${xKey}: ${r.x}`;\n");
+    fprintf(fp, "                },\n");
+    fprintf(fp, "                label: (context) => {\n");
+    fprintf(fp, "                  const val = context.parsed.y;\n");
+    fprintf(fp, "                  const formatted = (val !== null && val !== undefined) ? Number(val).toLocaleString('pt-BR', { maximumFractionDigits: 3 }) : 'N/D';\n");
+    fprintf(fp, "                  return ` ${context.dataset.label}: ${formatted}`;\n");
+    fprintf(fp, "                }\n");
+    fprintf(fp, "              }\n");
+    fprintf(fp, "            }\n");
     fprintf(fp, "          },\n");
     fprintf(fp, "          scales: {\n");
-    fprintf(fp, "            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 } },\n");
-    fprintf(fp, "            y: { type: scaleType, beginAtZero: beginZero, min: minYVal, max: maxYVal, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } } },\n");
-    fprintf(fp, "            ...(hasY1Axis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y1', color: '#38bdf8' } } } : {}),\n");
-    fprintf(fp, "            ...(hasY2Axis ? { y2: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY2Val, max: maxY2Val, grid: { drawOnChartArea: false }, ticks: { color: '#fbbf24', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Y2', color: '#fbbf24' } } } : {})\n");
+    fprintf(fp, "            x: {\n");
+    fprintf(fp, "              grid: { color: 'rgba(51, 65, 85, 0.35)' },\n");
+    fprintf(fp, "              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 }\n");
+    fprintf(fp, "            },\n");
+    fprintf(fp, "            y: {\n");
+    fprintf(fp, "              type: scaleType,\n");
+    fprintf(fp, "              beginAtZero: beginZero,\n");
+    fprintf(fp, "              min: minYVal,\n");
+    fprintf(fp, "              max: maxYVal,\n");
+    fprintf(fp, "              grid: { color: 'rgba(51, 65, 85, 0.35)' },\n");
+    fprintf(fp, "              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } },\n");
+    fprintf(fp, "              title: { display: (hasY1Axis || hasY2Axis), text: 'Eixo Y', color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } }\n");
+    fprintf(fp, "            },\n");
+    fprintf(fp, "            ...(hasY1Axis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Eixo Y1', color: '#38bdf8', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } } } } : {}),\n");
+    fprintf(fp, "            ...(hasY2Axis ? { y2: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY2Val, max: maxY2Val, grid: { drawOnChartArea: false }, ticks: { color: '#fbbf24', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Eixo Y2', color: '#fbbf24', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } } } } : {})\n");
     fprintf(fp, "          }\n");
     fprintf(fp, "        }\n");
     fprintf(fp, "      });\n");
@@ -1715,6 +1779,16 @@ int main(int argc, char **argv) {
     if (root) json_free(root);
     free(file_content);
 
-    printf("\n[CONCLUIDO] Executavel gerou com sucesso o arquivo '%s'!\n", html_output);
+    printf("\n[CONCLUIDO] Executavel gerou com sucesso o dashboard autonomo '%s'!\n", html_output);
+    printf("[100%% OFFLINE] Chart.js v4 foi embutido diretamente no arquivo gerado. Nao requer conexao com a internet!\n");
+    printf("[DICA] Dê um duplo-clique em '%s' para abrir seus graficos em qualquer navegador offline.\n\n", html_output);
+
+#ifdef _WIN32
+    if (argc == 1) {
+        char cmd[512];
+        snprintf(cmd, sizeof(cmd), "start \"\" \"%s\"", html_output);
+        system(cmd);
+    }
+#endif
     return 0;
 }

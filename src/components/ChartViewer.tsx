@@ -15,7 +15,8 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
-import { Download, Sliders, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Crosshair, Pin } from 'lucide-react';
+import { Download, Sliders, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Crosshair, Pin, Database, Sparkles, FolderOpen, ArrowRight } from 'lucide-react';
+import { SAMPLE_DATASETS, SampleDataset } from '../data/sampleDatasets';
 
 // Plugin para adicionar espaçamento vertical entre a legenda dos sinais e a área do gráfico,
 // garantindo que a etiqueta (badge) do cursor não sobreponha os itens da legenda.
@@ -61,6 +62,8 @@ interface ChartViewerProps {
   showCursor?: boolean;
   onToggleCursor?: () => void;
   onToggleMetricAxis?: (key: string) => void;
+  onOpenLoadModal?: () => void;
+  onSelectSample?: (sample: SampleDataset) => void;
 }
 
 export const ChartViewer: React.FC<ChartViewerProps> = ({
@@ -78,6 +81,8 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   holdSparseTelemetry = true,
   showCursor,
   onToggleCursor,
+  onOpenLoadModal,
+  onSelectSample,
 }) => {
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -890,6 +895,117 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   };
 
   const isBar = chartType === 'bar';
+
+  // Empty state view: rendered when app is initialized or cleared without data
+  if (records.length === 0) {
+    return (
+      <div className="flex flex-col gap-6 bg-slate-900/90 border border-slate-800 rounded-xl p-5 sm:p-7 shadow-sm">
+        {/* Banner de Boas-Vindas & Inicialização Limpa */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-6 border-b border-slate-800/80">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 text-indigo-400 shadow-inner shrink-0">
+              <Database className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">LogPlotter Iniciado</h2>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-semibold">
+                  Início Limpo (0 registros)
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                O aplicativo foi iniciado sem nenhum dado carregado. Você pode importar seus próprios arquivos de telemetria (<span className="text-indigo-300 font-mono">.csv, .json, .log, .ndjson</span>) ou clicar diretamente em qualquer um dos <strong>{SAMPLE_DATASETS.length} exemplos prontos</strong> integrados abaixo.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {onOpenLoadModal && (
+              <button
+                type="button"
+                onClick={onOpenLoadModal}
+                className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+              >
+                <FolderOpen className="w-4 h-4" />
+                <span>Carregar Meu Arquivo</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Grade com Todos os Exemplos Integrados */}
+        <div>
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
+                Biblioteca de Exemplos Integrados ({SAMPLE_DATASETS.length} Conjuntos de Teste)
+              </h3>
+            </div>
+            <span className="text-[11px] text-slate-400">Clique para carregar e plotar imediatamente</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+            {SAMPLE_DATASETS.map((sample) => {
+              const recordCount = sample.data ? sample.data.length : 0;
+              return (
+                <div
+                  key={sample.id}
+                  className="group relative flex flex-col justify-between bg-slate-950/70 border border-slate-800/90 hover:border-indigo-500/60 rounded-xl p-4 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-950/30 hover:bg-slate-950/90"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-950/70 border border-indigo-800/50 px-2 py-0.5 rounded-md">
+                        {sample.badge}
+                      </span>
+                      <span className="text-[10px] font-mono font-medium text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                        {recordCount} reg
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-white transition-colors mb-1.5">
+                      {sample.name}
+                    </h4>
+
+                    <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-3">
+                      {sample.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2.5 border-t border-slate-850/80 mt-1 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {sample.id.includes('csv') ? 'Tabela CSV' : 'Série Temporal'}
+                    </span>
+                    {onSelectSample && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectSample(sample)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-600 border border-indigo-700/50 hover:border-indigo-500 rounded-lg transition-all shadow-sm cursor-pointer"
+                      >
+                        <span>Carregar</span>
+                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Rodapé com Dicas de Formato */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-950/50 border border-slate-800/60 rounded-lg text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Formatos aceitos nativamente: <strong>.csv, .json, .ndjson, .log</strong></span>
+          </div>
+          <span className="text-slate-500 text-[11px]">
+            Detecção automática de colunas numéricas, eixos triplos Y/Y1/Y2 e sincronização temporal.
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
