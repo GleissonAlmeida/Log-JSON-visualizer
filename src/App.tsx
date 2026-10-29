@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { parseJsonLog, PALETTE } from './utils/jsonParser';
-import { SAMPLE_DATASETS, SampleDataset } from './data/sampleDatasets';
-import { MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID, ParseResult } from './types/log';
+import { SAMPLE_DATASETS } from './data/sampleDatasets';
+import { MetricConfig, GlobalChartType, YAxisScaleConfig, AxisID } from './types/log';
 import { ChartViewer } from './components/ChartViewer';
 import { MetricSelector } from './components/MetricSelector';
 import { JsonInputModal } from './components/JsonInputModal';
@@ -13,34 +13,54 @@ import {
   Package,
   BookOpen,
   ExternalLink,
-  Sparkles,
-  Trash2,
+  Sun,
+  Moon,
 } from 'lucide-react';
-
-const EMPTY_PARSE_RESULT: ParseResult = {
-  records: [],
-  fields: [],
-  detectedXKey: '',
-  detectedYKeys: [],
-  totalRecords: 0,
-  filename: '',
-  parseTimeMs: 0,
-};
+import { useTheme } from './context/ThemeContext';
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocOpen, setIsDocOpen] = useState(false);
 
-  // Initial parse result: Inicia sem dados carregados (conforme solicitado pelo usuário)
-  const [parseResult, setParseResult] = useState<ParseResult>(EMPTY_PARSE_RESULT);
+  // Initial parse result
+  const [parseResult, setParseResult] = useState(() => {
+    const initialJson = JSON.stringify(SAMPLE_DATASETS[0].data, null, 2);
+    return parseJsonLog(initialJson, SAMPLE_DATASETS[0].name);
+  });
 
   // Chart configuration state
-  const [xAxisKey, setXAxisKey] = useState<string>('');
+  const [xAxisKey, setXAxisKey] = useState<string>(parseResult.detectedXKey);
+  // Iniciar o aplicativo com o gráfico vazio (nenhuma métrica selecionada por padrão)
   const [selectedMetrics, setSelectedMetrics] = useState<MetricConfig[]>([]);
 
   const [chartType, setChartType] = useState<GlobalChartType>('line');
   const [tension, setTension] = useState<number>(0.25);
   const [showPoints, setShowPoints] = useState<boolean>(true);
+  // Estilo e cor dos pontos no tema claro
+  const [lightPointStyle, setLightPointStyle] = useState<'white-core' | 'contrast' | 'dark' | 'custom'>(() => {
+    return (localStorage.getItem('logplotter_light_point_style') as any) || 'white-core';
+  });
+  const [customPointColor, setCustomPointColor] = useState<string>(() => {
+    return localStorage.getItem('logplotter_custom_point_color') || '#4f46e5';
+  });
+
+  const handleLightPointStyleChange = (style: 'white-core' | 'contrast' | 'dark' | 'custom') => {
+    setLightPointStyle(style);
+    localStorage.setItem('logplotter_light_point_style', style);
+  };
+
+  const handleCustomPointColorChange = (color: string) => {
+    setCustomPointColor(color);
+    localStorage.setItem('logplotter_custom_point_color', color);
+  };
+
+  const handleMetricColorChange = (key: string, newColor: string) => {
+    setSelectedMetrics((prev) =>
+      prev.map((m) => (m.key === key ? { ...m, color: newColor } : m))
+    );
+  };
+
   const [fillArea, setFillArea] = useState<boolean>(false);
   const [dualAxis, setDualAxis] = useState<boolean>(true);
   const [holdSparseTelemetry, setHoldSparseTelemetry] = useState<boolean>(true);
@@ -60,9 +80,9 @@ export default function App() {
   });
 
   // Range window slider [start, end]
-  const [range, setRange] = useState<[number, number]>([0, 0]);
+  const [range, setRange] = useState<[number, number]>([0, parseResult.records.length - 1]);
 
-  const [datasetName, setDatasetName] = useState<string>('');
+  const [datasetName, setDatasetName] = useState<string>(SAMPLE_DATASETS[0].name);
 
   // Direct file loader
   const handleDirectFile = (file: File) => {
@@ -78,29 +98,14 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  // Handler to load any predefined sample
-  const handleSelectSample = (sample: SampleDataset) => {
-    const raw = sample.rawString || JSON.stringify(sample.data, null, 2);
-    handleLoadData(raw, sample.name);
-  };
-
-  // Reset back to clean initial state without data
-  const handleClearData = () => {
-    setParseResult(EMPTY_PARSE_RESULT);
-    setDatasetName('');
-    setXAxisKey('');
-    setSelectedMetrics([]);
-    setRange([0, 0]);
-  };
-
-  // Handler to load new JSON/CSV content
+  // Handler to load new JSON content
   const handleLoadData = (jsonStr: string, name?: string) => {
     try {
       const parsed = parseJsonLog(jsonStr, name || 'Log Carregado');
       setParseResult(parsed);
       setDatasetName(name || 'Log Personalizado');
       setXAxisKey(parsed.detectedXKey);
-      setRange([0, Math.max(0, parsed.records.length - 1)]);
+      setRange([0, parsed.records.length - 1]);
 
       const newMetrics: MetricConfig[] = parsed.detectedYKeys.map((key, i) => ({
         key,
@@ -177,91 +182,127 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div
+      className={`min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-200 ${
+        theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+      }`}
+    >
       {/* Top Header Bar */}
-      <header className="flex items-center justify-between gap-4 px-6 py-3 border-b border-slate-800 bg-slate-900/95 sticky top-0 z-40 backdrop-blur-md">
+      <header
+        className={`flex items-center justify-between gap-4 px-6 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors duration-200 ${
+          theme === 'dark'
+            ? 'border-slate-800 bg-slate-900/95 text-white'
+            : 'border-slate-200 bg-white/95 text-slate-900 shadow-xs'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow">
             <Monitor className="w-4 h-4" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tight text-white">
-              LogPlotter <span className="text-indigo-400 font-mono font-normal">Windows 11 (.EXE)</span>
+            <span className={`text-sm font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              LogPlotter <span className="text-indigo-500 font-mono font-normal">Windows 11 (.EXE)</span>
             </span>
-            <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-700/60 px-2 py-0.5 rounded-full font-semibold">
-              v2.6 C99 + Preview 1:1
+            <span
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${
+                theme === 'dark'
+                  ? 'bg-indigo-950 text-indigo-300 border-indigo-700/60'
+                  : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+              }`}
+            >
+              v2.7 C99 + Preview 1:1
             </span>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {parseResult.records.length > 0 && (
-            <button
-              onClick={handleClearData}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-800/60 rounded-lg transition-colors shadow-sm cursor-pointer"
-              title="Descarregar dados atuais e retornar à tela inicial limpa"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-              <span>Limpar Dados</span>
-            </button>
-          )}
-
+          {/* Alternador de Tema Escuro / Claro */}
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-300 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 rounded-lg transition-colors shadow-sm cursor-pointer"
-            title="Abrir catálogo com todos os exemplos prontos para teste"
+            onClick={toggleTheme}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all shadow-xs cursor-pointer ${
+              theme === 'dark'
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700 hover:border-slate-600'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300 hover:border-slate-400'
+            }`}
+            title={theme === 'dark' ? 'Alternar para Tema Claro' : 'Alternar para Tema Escuro'}
+            aria-label="Alternar Tema Claro / Escuro"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Exemplos ({SAMPLE_DATASETS.length})</span>
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-slate-200 font-medium">Tema Claro</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="text-slate-800 font-medium">Tema Escuro</span>
+              </>
+            )}
           </button>
 
           <a
             href="/grafico_c.html"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-lg transition-colors shadow-sm"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors shadow-xs ${
+              theme === 'dark'
+                ? 'text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900 border-emerald-700/60'
+                : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300'
+            }`}
             title="Abrir diretamente o arquivo grafico_c.html exportado pelo log_plotter.exe"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
             <span>Ver HTML do .EXE</span>
           </a>
 
           <a
             href="/log_plotter.exe?v=2.7.0"
             download="log_plotter.exe"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors shadow-xs ${
+              theme === 'dark'
+                ? 'text-slate-200 bg-slate-800 hover:bg-slate-700 border-slate-700'
+                : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300'
+            }`}
             title="Download do executável log_plotter.exe v2.7 100% Offline (com Chart.js embutido, sem necessidade de internet)"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <Download className="w-3.5 h-3.5 text-emerald-500" />
             <span>Baixar .EXE (Offline v2.7)</span>
           </a>
 
           <a
             href="/log_plotter_windows11.zip?v=2.7.0"
             download="log_plotter_windows11.zip"
-            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg transition-colors shadow-sm"
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors shadow-xs ${
+              theme === 'dark'
+                ? 'text-indigo-200 bg-indigo-950/80 hover:bg-indigo-900 border-indigo-700/60'
+                : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+            }`}
             title="Download do pacote .ZIP atualizado (v2.7 100% Offline) com log_plotter.exe, sample_can_bus.csv, sample_can_bus.json, scripts e documentação"
           >
-            <Package className="w-3.5 h-3.5 text-indigo-400" />
+            <Package className="w-3.5 h-3.5 text-indigo-500" />
             <span>Pacote .ZIP</span>
           </a>
 
           <button
             onClick={() => setIsDocOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors shadow-sm cursor-pointer"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors shadow-xs cursor-pointer ${
+              theme === 'dark'
+                ? 'text-slate-200 bg-slate-800 hover:bg-slate-700 border-slate-700'
+                : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300'
+            }`}
             title="Abrir documentação estilo GitHub (README.md)"
           >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Docs</span>
+            <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Documentação</span>
           </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            <span>Carregar Log</span>
+            <span>Carregar Log (JSON / CSV)</span>
           </button>
         </div>
       </header>
@@ -278,12 +319,17 @@ export default function App() {
               selectedMetrics={selectedMetrics}
               onToggleMetric={handleToggleMetric}
               onMetricAxisChange={handleMetricAxisChange}
+              onMetricColorChange={handleMetricColorChange}
               onSelectAllNumeric={handleSelectAllNumeric}
               onClearAllMetrics={handleClearAllMetrics}
               chartType={chartType}
               onChartTypeChange={handleChartTypeChange}
               showPoints={showPoints}
               onTogglePoints={() => setShowPoints(!showPoints)}
+              lightPointStyle={lightPointStyle}
+              onChangeLightPointStyle={handleLightPointStyleChange}
+              customPointColor={customPointColor}
+              onChangeCustomPointColor={handleCustomPointColorChange}
               fillArea={fillArea}
               onToggleFill={() => setFillArea(!fillArea)}
               dualAxis={dualAxis}
@@ -310,6 +356,8 @@ export default function App() {
               chartType={chartType}
               tension={tension}
               showPoints={showPoints}
+              lightPointStyle={lightPointStyle}
+              customPointColor={customPointColor}
               fillArea={fillArea}
               range={range}
               onRangeChange={setRange}
@@ -318,8 +366,6 @@ export default function App() {
               showCursor={showCursor}
               onToggleCursor={() => setShowCursor(!showCursor)}
               yAxisScale={yAxisScale}
-              onOpenLoadModal={() => setIsModalOpen(true)}
-              onSelectSample={handleSelectSample}
             />
           </div>
         </div>

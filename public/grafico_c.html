@@ -23,63 +23,76 @@
 
   </script>
   <style>
+    :root {
+      --bg-main: #020617; --bg-card: #0f172a; --bg-inner: #070d19;
+      --border-main: #1e293b; --border-sub: #334155;
+      --text-pri: #f1f5f9; --text-sec: #94a3b8; --text-mut: #64748b;
+      --hud-bg: #070d19; --modal-bg: #0f172a;
+    }
+    body.light {
+      --bg-main: #f8fafc; --bg-card: #ffffff; --bg-inner: #f1f5f9;
+      --border-main: #e2e8f0; --border-sub: #cbd5e1;
+      --text-pri: #0f172a; --text-sec: #475569; --text-mut: #64748b;
+      --hud-bg: #f8fafc; --modal-bg: #ffffff;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #020617; color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
-    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid #1e293b; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); }
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; background-color: var(--bg-main); color: var(--text-pri); min-height: 100vh; display: flex; flex-direction: column; transition: background-color 0.2s, color 0.2s; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border-main); position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); }
     .header-left { display: flex; align-items: center; gap: 12px; }
-    .logo-box { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: #fff; }
-    .badge-tag { font-size: 10px; font-family: 'JetBrains Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace; padding: 2px 8px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
-    .dataset-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace; color: #cbd5e1; background: #0f172a; padding: 3px 10px; border-radius: 6px; border: 1px solid #334155; }
+    .logo-box { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--text-pri); }
+    .badge-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
+    .dataset-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-sec); background: var(--bg-inner); padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border-sub); }
     .header-right { display: flex; align-items: center; gap: 8px; }
-    .btn-head { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
-    .btn-head:hover { background: #334155; color: #fff; }
+    .btn-head { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: var(--bg-inner); color: var(--text-sec); border: 1px solid var(--border-sub); }
+    .btn-head:hover { background: var(--border-main); color: var(--text-pri); }
     .btn-head.primary { background: #4f46e5; color: #fff; border-color: #4338ca; }
     .btn-head.primary:hover { background: #4338ca; }
+    .btn-head.theme-toggle { font-weight: 600; }
     .app-container { display: grid; grid-template-columns: 375px 1fr; gap: 16px; padding: 16px 24px; max-width: 1600px; margin: 0 auto; width: 100%; flex: 1; }
     @media (max-width: 1024px) { .app-container { grid-template-columns: 1fr; padding: 12px; } }
-    .panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
-    .chart-panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
-    .title-sec { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-    .subtext { font-size: 11px; color: #64748b; margin-top: 4px; }
-    select, input[type='text'] { width: 100%; background: #070d19; border: 1px solid #334155; color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; }
-    .btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #070d19; padding: 4px; border-radius: 8px; border: 1px solid #1e293b; }
-    .btn-type { background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 600; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .panel { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+    .chart-panel { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+    .title-sec { font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .subtext { font-size: 11px; color: var(--text-mut); margin-top: 4px; }
+    select, input[type='text'], input[type='number'] { width: 100%; background: var(--bg-inner); border: 1px solid var(--border-sub); color: var(--text-pri); padding: 8px 12px; border-radius: 8px; font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; }
+    .btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--bg-inner); padding: 4px; border-radius: 8px; border: 1px solid var(--border-main); }
+    .btn-type { background: transparent; border: none; color: var(--text-sec); font-size: 11px; font-weight: 600; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
     .btn-type.active { background: #4f46e5; color: #fff; }
     .toggles-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-    .toggle-label { background: #070d19; border: 1px solid #1e293b; padding: 8px 10px; border-radius: 8px; font-size: 11px; display: flex; items-center: center; gap: 6px; color: #cbd5e1; cursor: pointer; }
-    .slider-box { margin-top: 8px; background: #070d19; border: 1px solid #1e293b; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #94a3b8; }
+    .toggle-label { background: var(--bg-inner); border: 1px solid var(--border-main); padding: 8px 10px; border-radius: 8px; font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--text-sec); cursor: pointer; }
     .metric-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
-    .metric-item { display: flex; align-items: center; justify-content: space-between; background: #070d19; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 10px; transition: border-color 0.15s; }
-    .metric-item.selected { border-color: #334155; background: #131d31; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .chart-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #1e293b; gap: 10px; }
+    .metric-item { display: flex; align-items: center; justify-content: space-between; background: var(--bg-inner); border: 1px solid var(--border-main); border-radius: 8px; padding: 8px 10px; transition: border-color 0.15s; }
+    .metric-item.selected { border-color: var(--border-sub); background: var(--bg-card); }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .chart-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border-main); gap: 10px; }
     .chart-container { position: relative; flex: 1; min-height: 460px; padding: 16px; }
-    .chart-bottom { padding: 12px 18px; border-top: 1px solid #1e293b; background: #0b1120; font-size: 12px; color: #94a3b8; }
+    .chart-bottom { padding: 12px 18px; border-top: 1px solid var(--border-main); background: var(--hud-bg); font-size: 12px; color: var(--text-sec); }
     .range-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; align-items: center; }
-    .range-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-    .btn-tool { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-    .axis-btn-group { display: flex; align-items: center; background: #090d16; border: 1px solid #334155; border-radius: 6px; padding: 2px; gap: 2px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
-    .btn-axis-sub { background: transparent; border: none; color: #64748b; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.15s; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
-    .btn-axis-sub:hover { color: #cbd5e1; }
+    .range-item { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-sec); }
+    .btn-tool { background: var(--bg-inner); border: 1px solid var(--border-sub); color: var(--text-sec); font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .btn-tool.active { background: #4f46e5; color: #fff; border-color: #4338ca; }
+    .axis-btn-group { display: flex; align-items: center; background: var(--bg-inner); border: 1px solid var(--border-sub); border-radius: 6px; padding: 2px; gap: 2px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+    .btn-axis-sub { background: transparent; border: none; color: var(--text-mut); padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.15s; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    .btn-axis-sub:hover { color: var(--text-pri); }
     .btn-axis-sub.y.active { background: #475569; color: #fff; font-weight: bold; }
     .btn-axis-sub.y1.active { background: #0284c7; color: #fff; font-weight: bold; }
     .btn-axis-sub.y2.active { background: #d97706; color: #fff; font-weight: bold; }
-    .btn-sort { background: #070d19; border: 1px solid #1e293b; color: #94a3b8; font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono'; white-space: nowrap; transition: all 0.15s; }
+    .btn-sort { background: var(--bg-inner); border: 1px solid var(--border-main); color: var(--text-sec); font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono'; white-space: nowrap; transition: all 0.15s; }
     .btn-sort.active { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }
-    .section-divider { font-size: 10px; color: #64748b; font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid #1e293b; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }
-    .badge-zoh { font-size: 9px; background: #1e1b4b; color: #a5b4fc; padding: 1px 5px; border-radius: 4px; border: 1px solid #4338ca; font-family: 'JetBrains Mono'; }
-    .acc-card { background: #070d19; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
-    .acc-card summary { padding: 9px 12px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+    .section-divider { font-size: 10px; color: var(--text-mut); font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 4px 2px 4px; border-top: 1px solid var(--border-main); margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }
+    .badge-zoh { font-size: 9px; background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.4); font-family: 'JetBrains Mono'; }
+    .acc-card { background: var(--bg-inner); border: 1px solid var(--border-main); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+    .acc-card summary { padding: 9px 12px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; }
     .acc-card summary::-webkit-details-marker { display: none; }
-    .acc-card summary:hover { background: #0f172a; color: #cbd5e1; }
-    .acc-card summary .chevron { transition: transform 0.2s; font-size: 11px; color: #64748b; font-family: monospace; }
+    .acc-card summary:hover { background: var(--bg-card); color: var(--text-pri); }
+    .acc-card summary .chevron { transition: transform 0.2s; font-size: 11px; color: var(--text-mut); font-family: monospace; }
     .acc-card[open] summary .chevron { transform: rotate(90deg); color: #818cf8; }
-    .acc-body { padding: 10px 12px; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
-    .modal-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; max-width: 620px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }
-    .modal-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; }
-    .modal-close { background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
-    .modal-close:hover { color: #fff; }
+    .acc-body { padding: 10px 12px; border-top: 1px solid var(--border-main); display: flex; flex-direction: column; gap: 8px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal-box { background: var(--modal-bg); border: 1px solid var(--border-sub); border-radius: 12px; max-width: 620px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; color: var(--text-pri); }
+    .modal-title { font-size: 15px; font-weight: 700; color: var(--text-pri); display: flex; align-items: center; justify-content: space-between; }
+    .modal-close { background: transparent; border: none; color: var(--text-mut); font-size: 18px; cursor: pointer; }
+    .modal-close:hover { color: var(--text-pri); }
   </style>
 </head>
 <body>
@@ -93,17 +106,18 @@
       </div>
       <div class="dataset-pill">
         <span>&#128196;</span>
-        <span id="headerDatasetName">sample_can_bus.csv</span>
+        <span id="headerDatasetName">public/sample_can_bus.csv</span>
       </div>
     </div>
     <div class="header-right">
+      <button id="btnThemeToggle" class="btn-head theme-toggle" onclick="toggleTheme()" title="Alternar entre tema escuro e claro">&#9728; Claro</button>
       <label class="btn-head primary" title="Carregar arquivo CSV ou JSON">
-        <span>&#128194; Carregar Arquivo</span>
+        <span>&#128194; Carregar</span>
         <input type="file" id="fileHeadUpload" accept=".csv,.json,.log,.txt" style="display:none;" onchange="loadNewJsonFile(event)">
       </label>
-      <button class="btn-head" onclick="openPasteModal()">&#128203; Colar Dados</button>
+      <button class="btn-head" onclick="openPasteModal()">&#128203; Colar</button>
       <button class="btn-head" onclick="openExamplesModal()">&#128202; Exemplos</button>
-      <button class="btn-head" onclick="openDocModal()">&#128216; Ajuda / Doc</button>
+      <button class="btn-head" onclick="openDocModal()">&#128216; Ajuda</button>
       <button class="btn-head" onclick="downloadPNG()">&#128229; Salvar PNG</button>
     </div>
   </header>
@@ -155,8 +169,20 @@
           </label>
           <label class="toggle-label" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between;" title="Exibe cursor vertical no eixo X com painel de inspeção de amostras">
             <span style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="chkCursor" checked onchange="toggleCursor()"> Cursor Eixo X (Amostras)</span>
-            <span class="badge-zoh" style="background: #1e1b4b; color: #a5b4fc; border-color: #4338ca;">Inspeção</span>
+            <span class="badge-zoh" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.4);">Inspeção</span>
           </label>
+        </div>
+        <div id="boxLightPointStyle" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-main); display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 600; color: var(--text-sec);">Pontos no Tema Claro:</span>
+            <input type="color" id="pickerCustomPoint" value="#ffffff" onchange="onCustomPointColorChange(this.value)" title="Cor personalizada dos pontos" style="display: none; width: 22px; height: 20px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
+          </div>
+          <select id="selLightPointStyle" onchange="onLightPointStyleChange(this.value)" style="font-size: 11px; padding: 5px 8px;">
+            <option value="white-core" selected>Núcleo Branco (Recomendado)</option>
+            <option value="contrast">Borda Escura</option>
+            <option value="dark">Grafite Escuro</option>
+            <option value="custom">Personalizada</option>
+          </select>
         </div>
         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -202,13 +228,13 @@
           <button id="btnSortMode" class="btn-sort active" onclick="toggleSortMode()" title="Alternar: Selecionados no topo ou A-Z geral">&#8645; Selecionados 1º</button>
         </div>
         <div class="metric-list" id="metricList">
-          <div class="metric-item selected" id="item_BrakeSwitch" data-key="BrakeSwitch">
+          <div class="metric-item " id="item_BrakeSwitch" data-key="BrakeSwitch">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-              <input type="checkbox" id="chk_BrakeSwitch" checked onchange="toggleMetric('BrakeSwitch')" style="accent-color: #4f46e5;">
-              <span class="dot" style="background-color: #3b82f6;"></span>
+              <input type="checkbox" id="chk_BrakeSwitch"  onchange="toggleMetric('BrakeSwitch')" style="accent-color: #4f46e5;">
+              <input type="color" id="col_BrakeSwitch" value="#3b82f6" onchange="changeMetricColor('BrakeSwitch', this.value)" title="Clique para personalizar a cor" style="width: 18px; height: 18px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent; flex-shrink: 0;">
               <div>
                 <div style="font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono';">BrakeSwitch</div>
-                <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 1.0 &bull; méd: 0.2</div>
+                <div style="font-size: 10px; color: var(--text-mut); font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 1.0 &bull; méd: 0.2</div>
               </div>
             </label>
             <div class="axis-btn-group" id="axis_grp_BrakeSwitch">
@@ -217,13 +243,13 @@
               <button class="btn-axis-sub y2 " onclick="setMetricAxis('BrakeSwitch','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
             </div>
           </div>
-          <div class="metric-item selected" id="item_WheelBasedVehicleSpeed" data-key="WheelBasedVehicleSpeed">
+          <div class="metric-item " id="item_WheelBasedVehicleSpeed" data-key="WheelBasedVehicleSpeed">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-              <input type="checkbox" id="chk_WheelBasedVehicleSpeed" checked onchange="toggleMetric('WheelBasedVehicleSpeed')" style="accent-color: #4f46e5;">
-              <span class="dot" style="background-color: #10b981;"></span>
+              <input type="checkbox" id="chk_WheelBasedVehicleSpeed"  onchange="toggleMetric('WheelBasedVehicleSpeed')" style="accent-color: #4f46e5;">
+              <input type="color" id="col_WheelBasedVehicleSpeed" value="#10b981" onchange="changeMetricColor('WheelBasedVehicleSpeed', this.value)" title="Clique para personalizar a cor" style="width: 18px; height: 18px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent; flex-shrink: 0;">
               <div>
                 <div style="font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono';">WheelBasedVehicleSpeed</div>
-                <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 26.4 &bull; méd: 17.0</div>
+                <div style="font-size: 10px; color: var(--text-mut); font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 26.4 &bull; méd: 17.0</div>
               </div>
             </label>
             <div class="axis-btn-group" id="axis_grp_WheelBasedVehicleSpeed">
@@ -232,13 +258,13 @@
               <button class="btn-axis-sub y2 " onclick="setMetricAxis('WheelBasedVehicleSpeed','y2')" title="Eixo Direito 2 (Y2)">Y2</button>
             </div>
           </div>
-          <div class="metric-item selected" id="item_curr_gear" data-key="curr_gear">
+          <div class="metric-item " id="item_curr_gear" data-key="curr_gear">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-              <input type="checkbox" id="chk_curr_gear" checked onchange="toggleMetric('curr_gear')" style="accent-color: #4f46e5;">
-              <span class="dot" style="background-color: #f59e0b;"></span>
+              <input type="checkbox" id="chk_curr_gear"  onchange="toggleMetric('curr_gear')" style="accent-color: #4f46e5;">
+              <input type="color" id="col_curr_gear" value="#f59e0b" onchange="changeMetricColor('curr_gear', this.value)" title="Clique para personalizar a cor" style="width: 18px; height: 18px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent; flex-shrink: 0;">
               <div>
                 <div style="font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono';">curr_gear</div>
-                <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
+                <div style="font-size: 10px; color: var(--text-mut); font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
               </div>
             </label>
             <div class="axis-btn-group" id="axis_grp_curr_gear">
@@ -250,10 +276,10 @@
           <div class="metric-item " id="item_sel_gear" data-key="sel_gear">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
               <input type="checkbox" id="chk_sel_gear"  onchange="toggleMetric('sel_gear')" style="accent-color: #4f46e5;">
-              <span class="dot" style="background-color: #ec4899;"></span>
+              <input type="color" id="col_sel_gear" value="#ec4899" onchange="changeMetricColor('sel_gear', this.value)" title="Clique para personalizar a cor" style="width: 18px; height: 18px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: transparent; flex-shrink: 0;">
               <div>
                 <div style="font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono';">sel_gear</div>
-                <div style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
+                <div style="font-size: 10px; color: var(--text-mut); font-family: 'JetBrains Mono';">mín: 0.0 &bull; máx: 3.0 &bull; méd: 2.7</div>
               </div>
             </label>
             <div class="axis-btn-group" id="axis_grp_sel_gear">
@@ -299,8 +325,16 @@
         </div>
         <div id="hudMetricsContainer" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"></div>
       </div>
-      <div class="chart-container">
+      <div class="chart-container" style="position: relative;">
         <canvas id="mainCanvas"></canvas>
+        <div id="emptyChartOverlay" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10;">
+          <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; border-radius: 12px; padding: 22px 30px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); pointer-events: auto; max-width: 360px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: #818cf8; font-size: 18px;">&#9776;</div>
+            <div style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">Gráfico Vazio</div>
+            <div style="font-size: 12px; color: #94a3b8; line-height: 1.4; margin-bottom: 14px;">Nenhuma variável selecionada no momento. Marque os sinais desejados no painel à esquerda para visualizar suas curvas.</div>
+            <button onclick="selectAllMetrics()" class="btn-tool" style="background: #4f46e5; color: #fff; border-color: #4338ca; padding: 6px 16px; font-weight: 600; cursor: pointer;">Marcar Todas as Variáveis</button>
+          </div>
+        </div>
       </div>
       <div class="chart-bottom">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1784,6 +1818,37 @@
     let cursorEnabled = true;
     let cursorIdx = null;
     let isPinned = false;
+    let currentTheme = 'dark';
+    let lightPointStyle = 'white-core';
+    let customPointColor = '#ffffff';
+
+    function toggleTheme() {
+      currentTheme = (currentTheme === 'dark' ? 'light' : 'dark');
+      document.body.classList.toggle('light', currentTheme === 'light');
+      const btn = document.getElementById('btnThemeToggle');
+      if (btn) btn.innerHTML = (currentTheme === 'light' ? '&#9790; Escuro' : '&#9728; Claro');
+      updateChart();
+    }
+
+    function changeMetricColor(key, newColor) {
+      if (metricMeta[key]) {
+        metricMeta[key].color = newColor;
+        updateChart();
+        updateCursorHud();
+      }
+    }
+
+    function onLightPointStyleChange(style) {
+      lightPointStyle = style;
+      const picker = document.getElementById('pickerCustomPoint');
+      if (picker) picker.style.display = (style === 'custom' ? 'inline-block' : 'none');
+      updateChart();
+    }
+
+    function onCustomPointColorChange(val) {
+      customPointColor = val;
+      updateChart();
+    }
 
     function toggleAllAccordions() {
       const cards = document.querySelectorAll('.acc-card');
@@ -1806,7 +1871,7 @@
     const verticalCursorPlugin = {
       id: 'verticalCursorPlugin',
       afterDatasetsDraw(chart) {
-        if (!cursorEnabled) return;
+        if (!cursorEnabled || !chart.data.datasets || chart.data.datasets.length === 0) return;
         const filtered = rawData.slice(rangeStart, rangeEnd + 1);
         if (!filtered.length) return;
         if (cursorIdx === null || cursorIdx >= filtered.length) cursorIdx = Math.floor(filtered.length / 2);
@@ -1865,13 +1930,14 @@
           const cardH = 24 + activeMetrics.length * lineH + 8;
           let cardX = (x + 16 + cardW > chart.chartArea.right - 8) ? x - cardW - 16 : x + 16;
           let cardY = Math.min(top + 10, bottom - cardH - 8);
-          ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+          const isLight = (currentTheme === 'light');
+          ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(10, 15, 29, 0.94)';
           ctx.fillRect(cardX, cardY, cardW, cardH);
-          ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : 'rgba(99, 102, 241, 0.7)';
+          ctx.strokeStyle = isPinned ? (isLight ? 'rgba(217, 119, 6, 0.8)' : 'rgba(245, 158, 11, 0.7)') : (isLight ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.7)');
           ctx.strokeRect(cardX, cardY, cardW, cardH);
           ctx.textAlign = 'left';
           ctx.font = 'bold 11px sans-serif';
-          ctx.fillStyle = isPinned ? '#fbbf24' : '#a5b4fc';
+          ctx.fillStyle = isPinned ? (isLight ? '#b45309' : '#fbbf24') : (isLight ? '#4338ca' : '#a5b4fc');
           ctx.fillText(`Amostra: ${xLabel}`, cardX + 10, cardY + 14);
           activeMetrics.forEach((m, mIdx) => {
             const itemY = cardY + 28 + mIdx * lineH;
@@ -1880,11 +1946,11 @@
             ctx.fillStyle = m.color;
             ctx.fill();
             ctx.font = '10px sans-serif';
-            ctx.fillStyle = '#94a3b8';
+            ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
             ctx.fillText(m.label, cardX + 24, itemY + 3);
             ctx.textAlign = 'right';
             ctx.font = 'bold 10px monospace';
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
             ctx.fillText(`${m.val}${m.isHeld ? ' [H]' : ''}`, cardX + cardW - 10, itemY + 3);
             ctx.textAlign = 'left';
           });
@@ -1940,6 +2006,14 @@
             }
             return isHold ? lastVal : null;
           });
+          const isLight = (currentTheme === 'light');
+          let pBg = cfg.color, pBorder = '#ffffff', pWidth = 1.5;
+          if (isLight) {
+            if (lightPointStyle === 'white-core') { pBg = '#ffffff'; pBorder = cfg.color; pWidth = 2.5; }
+            else if (lightPointStyle === 'contrast') { pBg = cfg.color; pBorder = '#0f172a'; pWidth = 2.0; }
+            else if (lightPointStyle === 'dark') { pBg = '#1e293b'; pBorder = cfg.color; pWidth = 2.0; }
+            else if (lightPointStyle === 'custom') { pBg = customPointColor; pBorder = cfg.color; pWidth = 2.0; }
+          }
           datasets.push({
             label: key,
             data: seriesData,
@@ -1950,9 +2024,9 @@
             stepped: isStepped ? 'before' : false,
             pointRadius: showPoints ? 3.5 : 0,
             pointHoverRadius: 6,
-            pointBackgroundColor: cfg.color,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 1.5,
+            pointBackgroundColor: pBg,
+            pointBorderColor: pBorder,
+            pointBorderWidth: pWidth,
             fill: isArea,
             spanGaps: true,
             yAxisID: axis
@@ -1960,7 +2034,10 @@
         }
       }
       document.getElementById('cntSelected').innerText = selectedCount;
+      const emptyOverlay = document.getElementById('emptyChartOverlay');
+      if (emptyOverlay) emptyOverlay.style.display = (selectedCount === 0) ? 'flex' : 'none';
 
+      const isLightMode = (currentTheme === 'light');
       const ctx = document.getElementById('mainCanvas').getContext('2d');
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, {
@@ -1990,7 +2067,7 @@
               position: 'top',
               align: 'end',
               labels: {
-                color: '#cbd5e1',
+                color: isLightMode ? '#0f172a' : '#cbd5e1',
                 font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 },
                 boxWidth: 12,
                 boxHeight: 12,
@@ -2000,10 +2077,10 @@
               }
             },
             tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-              titleColor: '#f8fafc',
-              bodyColor: '#e2e8f0',
-              borderColor: 'rgba(51, 65, 85, 0.8)',
+              backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.98)' : 'rgba(15, 23, 42, 0.95)',
+              titleColor: isLightMode ? '#0f172a' : '#f8fafc',
+              bodyColor: isLightMode ? '#334155' : '#e2e8f0',
+              borderColor: isLightMode ? 'rgba(203, 213, 225, 0.9)' : 'rgba(51, 65, 85, 0.8)',
               borderWidth: 1,
               padding: 12,
               cornerRadius: 8,
@@ -2027,17 +2104,17 @@
           },
           scales: {
             x: {
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 }
+              grid: { color: isLightMode ? 'rgba(226, 232, 240, 0.9)' : 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 14 }
             },
             y: {
               type: scaleType,
               beginAtZero: beginZero,
               min: minYVal,
               max: maxYVal,
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } },
-              title: { display: (hasY1Axis || hasY2Axis), text: 'Eixo Y', color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } }
+              grid: { color: isLightMode ? 'rgba(226, 232, 240, 0.9)' : 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } },
+              title: { display: (hasY1Axis || hasY2Axis), text: 'Eixo Y', color: isLightMode ? '#64748b' : '#94a3b8', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } }
             },
             ...(hasY1Axis ? { y1: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY1Val, max: maxY1Val, grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Eixo Y1', color: '#38bdf8', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } } } } : {}),
             ...(hasY2Axis ? { y2: { type: scaleType, position: 'right', beginAtZero: beginZero, min: minY2Val, max: maxY2Val, grid: { drawOnChartArea: false }, ticks: { color: '#fbbf24', font: { family: 'JetBrains Mono', size: 11 } }, title: { display: true, text: 'Eixo Y2', color: '#fbbf24', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' } } } } : {})
@@ -2171,8 +2248,8 @@
           const axStyle = ax === 'y2' ? 'color:#fbbf24;background:#451a03;border-color:#b45309;' : (ax === 'y1' ? 'color:#38bdf8;background:#082f49;border-color:#0284c7;' : 'color:#94a3b8;background:#1e293b;border-color:#334155;');
           const axTag = isDual ? ` <span style="font-size:9px;font-family:\'JetBrains Mono\';padding:1px 4px;border-radius:4px;border:1px solid;${axStyle}font-weight:700;">${ax.toUpperCase()}</span>` : '';
           const badge = document.createElement('div');
-          badge.style = 'display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid #1e293b;padding:3px 8px;border-radius:6px;';
-          badge.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block;"></span><span style="color:#94a3b8;font-family:\'JetBrains Mono\';font-size:10px;">${key}:</span><strong style="color:#fff;font-family:\'JetBrains Mono\';">${valFormatted}</strong>${holdTag}${axTag}`;
+          badge.style = 'display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid var(--border-main);padding:3px 8px;border-radius:6px;';
+          badge.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block;"></span><span style="color:var(--text-sec);font-family:\'JetBrains Mono\';font-size:10px;">${key}:</span><strong style="color:var(--text-pri);font-family:\'JetBrains Mono\';">${valFormatted}</strong>${holdTag}${axTag}`;
           container.appendChild(badge);
         }
       }
@@ -2344,7 +2421,8 @@
       exportCanvas.height = srcCanvas.height;
       const ctx = exportCanvas.getContext('2d');
       if (!ctx) return;
-      ctx.fillStyle = '#090d16';
+      const isLight = (currentTheme === 'light');
+      ctx.fillStyle = isLight ? '#ffffff' : '#090d16';
       ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
       ctx.drawImage(srcCanvas, 0, 0);
       if (cursorEnabled && cursorIdx !== null && chartInstance.chartArea) {
@@ -2402,13 +2480,13 @@
             const cardH = 24 + activeMetrics.length * lineH + 8;
             let cardX = (x + 16 + cardW > right - 8) ? x - cardW - 16 : x + 16;
             let cardY = Math.min(top + 10, bottom - cardH - 8);
-            ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+            ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.98)' : 'rgba(10, 15, 29, 0.94)';
             ctx.fillRect(cardX, cardY, cardW, cardH);
-            ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : 'rgba(99, 102, 241, 0.7)';
+            ctx.strokeStyle = isPinned ? (isLight ? 'rgba(217, 119, 6, 0.8)' : 'rgba(245, 158, 11, 0.7)') : (isLight ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.7)');
             ctx.strokeRect(cardX, cardY, cardW, cardH);
             ctx.textAlign = 'left';
             ctx.font = 'bold 11px sans-serif';
-            ctx.fillStyle = isPinned ? '#fbbf24' : '#a5b4fc';
+            ctx.fillStyle = isPinned ? (isLight ? '#b45309' : '#fbbf24') : (isLight ? '#4338ca' : '#a5b4fc');
             ctx.fillText(`Amostra: ${xLabel}`, cardX + 10, cardY + 14);
             activeMetrics.forEach((m, mIdx) => {
               const itemY = cardY + 28 + mIdx * lineH;
@@ -2417,11 +2495,11 @@
               ctx.fillStyle = m.color;
               ctx.fill();
               ctx.font = '10px sans-serif';
-              ctx.fillStyle = '#94a3b8';
+              ctx.fillStyle = isLight ? '#475569' : '#94a3b8';
               ctx.fillText(m.label, cardX + 24, itemY + 3);
               ctx.textAlign = 'right';
               ctx.font = 'bold 10px monospace';
-              ctx.fillStyle = '#ffffff';
+              ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
               ctx.fillText(`${m.val}${m.isHeld ? ' [H]' : ''}`, cardX + cardW - 10, itemY + 3);
               ctx.textAlign = 'left';
             });
@@ -2491,7 +2569,7 @@
         itm.className = 'metric-item' + (idx < 3 ? ' selected' : '');
         itm.id = 'item_' + k;
         itm.setAttribute('data-key', k);
-        itm.innerHTML = `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;"><input type="checkbox" id="chk_${k}" ${idx < 3 ? 'checked' : ''} onchange="toggleMetric('${k}')" style="accent-color:#4f46e5;"><span class="dot" style="background:${col}"></span><div style="font-size:12px;font-weight:600;font-family:'JetBrains Mono';">${k}</div></label><div class="axis-btn-group" id="axis_grp_${k}"><button class="btn-axis-sub y ${axChoice==='y'?'active':''}" onclick="setMetricAxis('${k}','y')" title="Eixo Principal (Y)">Y</button><button class="btn-axis-sub y1 ${axChoice==='y1'?'active':''}" onclick="setMetricAxis('${k}','y1')" title="Eixo Direito 1 (Y1)">Y1</button><button class="btn-axis-sub y2 ${axChoice==='y2'?'active':''}" onclick="setMetricAxis('${k}','y2')" title="Eixo Direito 2 (Y2)">Y2</button></div>`;
+        itm.innerHTML = `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;"><input type="checkbox" id="chk_${k}" ${idx < 3 ? 'checked' : ''} onchange="toggleMetric('${k}')" style="accent-color:#4f46e5;"><input type="color" id="col_${k}" value="${col}" onchange="changeMetricColor('${k}', this.value)" title="Clique para personalizar a cor" style="width:18px;height:18px;border:none;border-radius:4px;cursor:pointer;padding:0;background:transparent;flex-shrink:0;"><div style="font-size:12px;font-weight:600;font-family:'JetBrains Mono';">${k}</div></label><div class="axis-btn-group" id="axis_grp_${k}"><button class="btn-axis-sub y ${axChoice==='y'?'active':''}" onclick="setMetricAxis('${k}','y')" title="Eixo Principal (Y)">Y</button><button class="btn-axis-sub y1 ${axChoice==='y1'?'active':''}" onclick="setMetricAxis('${k}','y1')" title="Eixo Direito 1 (Y1)">Y1</button><button class="btn-axis-sub y2 ${axChoice==='y2'?'active':''}" onclick="setMetricAxis('${k}','y2')" title="Eixo Direito 2 (Y2)">Y2</button></div>`;
         listEl.appendChild(itm);
       });
       const headName = document.getElementById('headerDatasetName');

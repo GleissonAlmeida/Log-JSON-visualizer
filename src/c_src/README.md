@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📊 LogPlotter C &bull; CSV &amp; JSON Data Log Visualizer (v2.6)
+# 📊 LogPlotter C &bull; CSV &amp; JSON Data Log Visualizer (v2.7)
 
 **Leitor de logs e telemetria de alta performance e plotador gráfico interativo desenvolvido em Linguagem C (ANSI C99) com suporte a arquivos CSV e JSON, exportação para Chart.js e binário nativo para Windows 11.**
 
@@ -23,13 +23,25 @@
 
 ## 🎯 Visão Geral
 
-O **LogPlotter C (v2.6)** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, telemetria veicular CAN Bus e métricas de sistemas armazenados em formato **CSV (delimitado por vírgula `,`, ponto-e-vírgula `;` ou tabulação `\t`)**, bem como **JSON** ou **JSONL (JSON Lines)**.
+O **LogPlotter C (v2.7)** é uma solução completa para análise e visualização de dados de telemetria, logs de sensores IoT, telemetria veicular CAN Bus e métricas de sistemas armazenados em formato **CSV (delimitado por vírgula `,`, ponto-e-vírgula `;` ou tabulação `\t`)**, bem como **JSON** ou **JSONL (JSON Lines)**.
 
-O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos e autônomos.
+O projeto une a eficiência de processamento e alocação dinâmica de memória em **Linguagem C pura (ANSI C99)** com a interatividade moderna do **Chart.js**, gerando dashboards gráficos responsivos, autônomos e com **paridade gráfica total com a versão web React**.
 
 ---
 
 ## ✨ Recursos Principais
+
+### 🎨 Temas e Propriedades Gráficas (Novo v2.7)
+- **Alternância Dinâmica entre Tema Claro e Tema Escuro**:
+  - **Tema Escuro**: fundo slate profundo (`#020617`), painéis `#0f172a`, eixos e grids com contraste suave (`rgba(51, 65, 85, 0.35)`).
+  - **Tema Claro**: fundo limpo `#f8fafc`, painéis brancos puros (`#ffffff`), divisores discretos (`#e2e8f0`) e gridlines legíveis (`rgba(226, 232, 240, 0.9)`).
+- **Estilos de Pontos no Tema Claro**:
+  - `Núcleo Branco` *(Recomendado)*: núcleo em branco `#ffffff` com borda externa na cor do sinal (largura de 2.5px), garantindo máxima distinção visual e acabamento elegante.
+  - `Borda Escura`: núcleo na cor do sinal com contorno escuro (`#0f172a`).
+  - `Grafite Escuro`: núcleo em cinza escuro(`#1e293b`) com contorno da métrica.
+  - `Personalizada`: seletor de cor livre para customizar os marcadores pontuais.
+- **Seletor Interativo de Cores por Variável**: cada métrica listada possui um seletor visual de cor (`<input type="color">`) que permite alterar a cor de qualquer curva em tempo real, refletindo na legenda, no cursor HUD e na exportação PNG.
+- **Exportação PNG Adaptativa ao Tema**: gravação em imagem PNG de alta definição respeitando o tema ativo (fundo branco no modo claro, fundo escuro no modo dark, incluindo linha de cursor vertical, marcadores e cartão flutuante de inspeção).
 
 ### 📥 Ingestão e Leitura de Dados
 - **Suporte Completo a CSV (.csv)**: auto-detecção de delimitadores (`,`, `;`, `\t`, `|`) e conversão automática de números com vírgula decimal brasileira/europeia (ex: `12,50`).
@@ -46,14 +58,13 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 - **Hold de Telemetria (CAN Bus / Sample & Hold)**:
   - Recuperação automática do último valor válido recebido para sinais com broadcast em frequências alternadas, tanto no gráfico quanto no HUD (com indicador `[hold]`).
 - **Eixo X Dinâmico**: selecione qualquer campo temporal ou utilize o índice sequencial numérico (`#1, #2, #3...`).
-- **Múltiplas Séries Simultâneas**: plote quantas métricas desejar com paleta de cores de alto contraste.
 - **Classificação Inteligente**: exibe os sinais selecionados no topo com botão alternador `[Selecionados 1º]` / `[A-Z Geral]`.
 - **Eixos Y Múltiplos (Y, Y1, Y2)**: plote simultaneamente métricas de ordens de grandeza distintas em até três eixos independentes:
   - **Eixo Y**: esquerdo principal (cinza/slate)
   - **Eixo Y1**: direito 1 (azul celeste `#38bdf8`)
   - **Eixo Y2**: direito 2 (âmbar/dourado `#fbbf24`)
 - **Ajuste da Escala do Eixo Y**: modo Automático ou Manual (com limites independentes para Y, Y1 e Y2), Iniciar no zero (0) e Escala Logarítmica.
-- **Estilos Gráficos Fluidos**: alternância instantânea e sem bloqueios entre Linha, Área preenchida, Barras e Degraus (*Stepped lines*).
+- **Estilos Gráficos Fluidos**: alternância instantânea entre Linha, Área preenchida, Barras e Degraus (*Stepped lines*).
 - **Filtro de Faixa Temporal**: barra de rolagem interativa (*range scrubber*) com atalhos para `100%`, `50%`, `25%` e `Últimos 30` registros.
 - **Exportação com Dados do Cursor**: download do gráfico em imagem **PNG em alta resolução** com fundo escuro, incluindo a linha do cursor, marcador da amostra, pontos de interseção e cartão flutuante de inspeção com todos os valores numéricos e badges dos eixos.
 
@@ -96,7 +107,7 @@ Não é necessário instalar compiladores, Python ou Node.js para rodar no Windo
 | Arquivo | Descrição | Link |
 | :--- | :--- | :--- |
 | **`log_plotter.exe`** | Executável nativo x86-64 compilado estaticamente (~389 KB) | [Baixar .EXE](/log_plotter.exe) |
-| **`log_plotter_windows11.zip`** | Pacote completo v2.5 com executável, datasets CSV/JSON e script `.bat` (~203 KB) | [Baixar .ZIP](/log_plotter_windows11.zip) |
+| **`log_plotter_windows11.zip`** | Pacote completo v2.7 com executável, datasets CSV/JSON, temas Claro/Escuro, estilos de pontos e script `.bat` | [Baixar .ZIP](/log_plotter_windows11.zip) |
 
 ### 🚀 Execução Rápida em 2 Cliques no Windows 11:
 1. Baixe e extraia o pacote `log_plotter_windows11.zip`.

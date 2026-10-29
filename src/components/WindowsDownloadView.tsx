@@ -32,7 +32,7 @@ export const WindowsDownloadView: React.FC = () => {
           {/* Quick Download Buttons */}
           <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto shrink-0">
             <a
-              href="/log_plotter_windows11.zip"
+              href="/log_plotter_windows11.zip?v=2.7.0"
               download="log_plotter_windows11.zip"
               className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95"
             >
@@ -41,7 +41,7 @@ export const WindowsDownloadView: React.FC = () => {
             </a>
 
             <a
-              href="/log_plotter.exe"
+              href="/log_plotter.exe?v=2.7.0"
               download="log_plotter.exe"
               className="flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-colors"
             >

@@ -6,47 +6,63 @@ Este pacote contém o executável binário compilado nativamente para Windows 11
 estaticamente vinculado (-static), sem necessidade de instalar DLLs externas, compilador, Python ou Node.js.
 E O MELHOR: FUNCIONA 100% OFFLINE, SEM NENHUMA CONEXÃO COM A INTERNET!
 
-NOVIDADES DA VERSÃO 2.7 (100% OFFLINE / STANDALONE):
-----------------------------------------------------
-1. Funcionamento 100% Offline (Sem Internet):
+NOVIDADES DA VERSÃO 2.7 (100% OFFLINE / STANDALONE COM TEMAS & ESTILOS):
+------------------------------------------------------------------------
+1. Alternância Dinâmica de Tema Escuro e Claro (Dark & Light Theme):
+   - Botão seletor no cabeçalho do dashboard permitindo alternar instantaneamente entre Modo Escuro (Slate/Navy industrial) e Modo Claro (Clean corporativo/relatórios).
+   - O gráfico gerado e a exportação para imagem PNG herdam e respeitam 100% o tema selecionado.
+
+2. Customização Completa da Cor e Estilo dos Pontos no Tema Claro:
+   - No Tema Claro, foi adicionado um controle de estilo dos pontos com 4 modos exclusivos para máxima visibilidade em fundos claros:
+     * 'White-Core': Ponto com miolo branco e borda grossa na cor da variável (estilo clássico com excelente contraste).
+     * 'Alto Contraste': Borda escura reforçada (#0f172a) com preenchimento vibrante na cor da métrica.
+     * 'Ponto Escuro': Preenchimento escuro elegante com anel fino colorido.
+     * 'Personalizado': Seleção manual da cor de preenchimento e da cor de borda dos pontos via seletores colorimétricos.
+
+3. Seletores Interativos de Cor por Variável (Color Pickers):
+   - O painel lateral 'Variáveis Selecionadas' permite alterar a cor de qualquer métrica plotada em tempo real com um clique.
+
+4. Funcionamento 100% Offline (Sem Internet):
    - O Chart.js v4 UMD foi embutido diretamente dentro do código binário em C.
    - O arquivo 'grafico_c.html' gerado é um dashboard único e 100% autônomo (Single-File Dashboard).
    - Não faz nenhuma chamada externa de rede (zero requisições a CDNs ou APIs).
    - Abre instantaneamente (0ms de espera DNS) em qualquer computador desconectado da rede, ambiente industrial, bancada automotiva ou notebook em campo.
    - Utiliza fontes modernas do próprio sistema (Segoe UI, Cascadia Code, Consolas) sem travar esperando o Google Fonts.
 
-2. Seções Retráteis (Accordions) no Painel Lateral:
+5. Seções Retráteis (Accordions) no Painel Lateral:
    - Seções 'Origem dos Dados', 'Eixo X', 'Estilo do Gráfico' e 'Variáveis Selecionadas' retráteis com botão 'Recolher / Expandir', otimizando o espaço útil do dashboard.
 
-3. Três Eixos Y Independentes (Y, Y1 e Y2):
+6. Três Eixos Y Independentes (Y, Y1 e Y2):
    - Suporte a plotagem simultânea em até três escalas verticais distintas:
      * Eixo Y: Esquerdo principal (em cinza/slate)
      * Eixo Y1: Direito 1 (em azul celeste #38bdf8)
      * Eixo Y2: Direito 2 (em âmbar/ouro #fbbf24)
    - Controles independentes de limites manuais (Mín e Máx) para os eixos Y, Y1 e Y2 no painel lateral.
-2. Alternância Instantânea e Fluida de Estilo Gráfico:
+
+7. Alternância Instantânea e Fluida de Estilo Gráfico:
    - Alternador direto entre Linha, Área preenchida, Barras e Degraus (Stepped), sem bloqueios ao retornar para Linha.
-3. Leitura Completa de Arquivos CSV (.csv) e JSON/JSONL:
+
+8. Leitura Completa de Arquivos CSV (.csv) e JSON/JSONL:
    - Lê arquivos CSV com detecção automática de separadores (vírgula ',', ponto-e-vírgula ';', tabulação '\t' e pipe '|').
    - Suporta números decimais com vírgula (padrão brasileiro/europeu, ex: 12,50).
    - O executável C aceita arquivos .csv diretamente pela linha de comando ou arrastando o arquivo para cima do .exe.
-4. Exportação para PNG com Cursor e Valores das Amostras:
-   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gravada inclui a linha vertical tracejada, a etiqueta da amostra no topo, os marcadores em cada curva e o cartão flutuante de inspeção com valores numéricos e badges de eixo.
-5. Hold de Telemetria (Sample & Hold) no Cursor e HUD:
-   - Mantém o último valor válido recebido para sinais esparsos de CAN bus, exibindo o status [hold].
-6. Espaço Dedicado entre a Legenda dos Sinais e o Gráfico:
-   - Margem de respiro de 36px abaixo da legenda dos sinais, eliminando qualquer sobreposição com o cursor.
-7. Cursor Eixo X Totalmente Reativo com Navegação por Mouse e Teclado.
+
+9. Exportação para PNG com Tema, Cursor e Valores das Amostras:
+   - Ao salvar o gráfico em imagem PNG com o cursor ativo, a imagem gravada inclui o fundo do tema ativo (claro ou escuro), a linha vertical tracejada, a etiqueta da amostra no topo, os marcadores em cada curva e o cartão flutuante de inspeção com valores numéricos e badges de eixo.
+
+10. Hold de Telemetria (Sample & Hold) no Cursor e HUD:
+    - Mantém o último valor válido recebido para sinais esparsos de CAN bus, exibindo o status [hold].
 
 CONTEÚDO DO PACOTE:
 --------------------
-1. log_plotter.exe         - Binário executável nativo em C99 (64-bit Windows com suporte a CSV e JSON).
+1. log_plotter.exe         - Binário executável nativo em C99 (64-bit Windows com suporte a CSV e JSON, Temas Claro/Escuro e Estilo de Pontos).
 2. sample_can_bus.csv      - Log CAN Bus em formato CSV real (1450 amostras).
 3. sample_can_bus.json     - Log CAN Bus automotivo em formato JSON Lines.
 4. sample_iot.json         - Exemplo de telemetria IoT convencional.
-5. grafico_c.html          - Gráfico interativo completo gerado pelo executável em C.
+5. grafico_c.html          - Gráfico interativo completo gerado pelo executável em C com temas Claro/Escuro e estilização de pontos.
 6. executar_no_windows.bat - Script de 2 cliques para rodar e abrir o gráfico automaticamente.
 7. LEIA-ME_WINDOWS.txt     - Este arquivo com as instruções de uso.
+8. README.md               - Documentação técnica completa da ferramenta.
 
 COMO USAR NO WINDOWS 11:
 ------------------------

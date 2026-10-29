@@ -31,6 +31,19 @@ O projeto une a eficiência de processamento e alocação dinâmica de memória 
 
 ## ✨ Recursos Principais
 
+### 🎨 Temas e Propriedades Gráficas (Novo v2.7)
+- **Alternância Dinâmica entre Tema Claro e Tema Escuro**:
+  - **Tema Escuro**: fundo slate profundo (`#020617`), painéis `#0f172a`, eixos e grids com contraste suave (`rgba(51, 65, 85, 0.35)`).
+  - **Tema Claro**: fundo limpo `#f8fafc`, painéis brancos puros (`#ffffff`), divisores discretos (`#e2e8f0`) e gridlines legíveis (`rgba(226, 232, 240, 0.9)`).
+- **Estilos de Pontos no Tema Claro**:
+  - `Núcleo Branco` *(Padrão Recomendado)*: núcleo em branco `#ffffff` com borda externa na cor do sinal (largura de 2.5px), garantindo máxima distinção visual e acabamento elegante.
+  - `Borda Escura`: núcleo na cor do sinal com contorno escuro (`#0f172a`).
+  - `Grafite Escuro`: núcleo em cinza escuro (`#1e293b`) com contorno da métrica.
+  - `Personalizada`: seletor de cor hexadecimal livre para os marcadores pontuais.
+- **Seletor Interativo de Cores por Variável**: cada métrica listada possui um seletor visual de cor (`<input type="color">`) que permite alterar a cor de qualquer curva em tempo real, refletindo na legenda, no cursor HUD e na exportação PNG.
+- **Exportação PNG Adaptativa ao Tema**: gravação em imagem PNG de alta definição respeitando o tema ativo (fundo branco no modo claro, fundo escuro no modo dark, incluindo linha de cursor vertical, marcadores e cartão flutuante de inspeção).
+- **Paridade Gráfica Total**: o executável C gera relatórios autônomos offline com exatamente as mesmas propriedades gráficas, paletas e funcionalidades do preview web.
+
 ### 📥 Ingestão e Leitura de Dados
 - **Suporte Nativo a CSV (.csv)**: auto-detecção inteligente de separadores (vírgula `,`, ponto-e-vírgula `;`, tabulação `\t` e pipe `|`) com conversão de casas decimais com vírgula (ex: `12,50`).
 - **Leitor Dinâmico de JSON / JSONL**: leitura de arrays JSON e arquivos JSON Lines com detecção automática de registros e propriedades numéricas.

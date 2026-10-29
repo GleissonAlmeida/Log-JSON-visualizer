@@ -15,8 +15,8 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { MetricConfig, GlobalChartType, YAxisScaleConfig } from '../types/log';
-import { Download, Sliders, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Crosshair, Pin, Database, Sparkles, FolderOpen, ArrowRight } from 'lucide-react';
-import { SAMPLE_DATASETS, SampleDataset } from '../data/sampleDatasets';
+import { Download, Sliders, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Crosshair, Pin } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 // Plugin para adicionar espaçamento vertical entre a legenda dos sinais e a área do gráfico,
 // garantindo que a etiqueta (badge) do cursor não sobreponha os itens da legenda.
@@ -62,8 +62,8 @@ interface ChartViewerProps {
   showCursor?: boolean;
   onToggleCursor?: () => void;
   onToggleMetricAxis?: (key: string) => void;
-  onOpenLoadModal?: () => void;
-  onSelectSample?: (sample: SampleDataset) => void;
+  lightPointStyle?: 'white-core' | 'contrast' | 'dark' | 'custom';
+  customPointColor?: string;
 }
 
 export const ChartViewer: React.FC<ChartViewerProps> = ({
@@ -81,9 +81,11 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   holdSparseTelemetry = true,
   showCursor,
   onToggleCursor,
-  onOpenLoadModal,
-  onSelectSample,
+  lightPointStyle = 'white-core',
+  customPointColor = '#4f46e5',
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const chartRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartCanvasAreaRef = useRef<HTMLDivElement>(null);
@@ -155,6 +157,57 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
       const isStepped = chartType === 'stepped';
       const isArea = chartType === 'area';
 
+      // Cores e estilo dos pontos: adaptados com alto contraste para o tema claro
+      let pointBg = baseColor;
+      let pointBorder = '#ffffff';
+      let pointBorderWidth = 1.5;
+      let pointRadius = showPoints ? 3.5 : 0;
+      let pointHoverBg = baseColor;
+      let pointHoverBorder = '#ffffff';
+
+      if (!isDark) {
+        // No tema claro, estilização que garante máxima visibilidade contra o fundo branco
+        switch (lightPointStyle) {
+          case 'contrast':
+            // Preenchido com a cor do sinal e anel grafite escuro
+            pointBg = baseColor;
+            pointBorder = '#0f172a';
+            pointBorderWidth = 2;
+            pointRadius = showPoints ? 4 : 0;
+            pointHoverBg = '#0f172a';
+            pointHoverBorder = baseColor;
+            break;
+          case 'dark':
+            // Ponto grafite escuro com anel da cor do sinal
+            pointBg = '#0f172a';
+            pointBorder = baseColor;
+            pointBorderWidth = 2;
+            pointRadius = showPoints ? 4 : 0;
+            pointHoverBg = baseColor;
+            pointHoverBorder = '#0f172a';
+            break;
+          case 'custom':
+            // Cor personalizada escolhida pelo usuário
+            pointBg = customPointColor || '#4f46e5';
+            pointBorder = '#0f172a';
+            pointBorderWidth = 1.5;
+            pointRadius = showPoints ? 4 : 0;
+            pointHoverBg = baseColor;
+            pointHoverBorder = customPointColor || '#4f46e5';
+            break;
+          case 'white-core':
+          default:
+            // Núcleo branco com borda na cor do sinal (estilo clássico de dashboard claro)
+            pointBg = '#ffffff';
+            pointBorder = baseColor;
+            pointBorderWidth = 2.5;
+            pointRadius = showPoints ? 4 : 0;
+            pointHoverBg = baseColor;
+            pointHoverBorder = '#ffffff';
+            break;
+        }
+      }
+
       return {
         label: metric.label || metric.key,
         data,
@@ -163,17 +216,33 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         borderWidth: 2.2,
         tension: isStepped ? 0 : tension,
         stepped: isStepped ? ('before' as const) : false,
-        pointRadius: showPoints ? 3.5 : 0,
-        pointHoverRadius: 6,
-        pointBackgroundColor: baseColor,
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 1.5,
+        pointRadius,
+        pointHoverRadius: 6.5,
+        pointBackgroundColor: pointBg,
+        pointBorderColor: pointBorder,
+        pointBorderWidth,
+        pointHoverBackgroundColor: pointHoverBg,
+        pointHoverBorderColor: pointHoverBorder,
         fill: isArea,
         spanGaps: true,
         yAxisID: dualAxis ? metric.yAxis : 'y',
       };
     });
-  }, [selectedMetrics, filteredRecords, records, startIdx, chartType, tension, showPoints, fillArea, dualAxis, holdSparseTelemetry]);
+  }, [
+    selectedMetrics,
+    filteredRecords,
+    records,
+    startIdx,
+    chartType,
+    tension,
+    showPoints,
+    fillArea,
+    dualAxis,
+    holdSparseTelemetry,
+    isDark,
+    lightPointStyle,
+    customPointColor,
+  ]);
 
   // Função para obter o valor efetivo de uma métrica na amostra atual.
   // Quando a métrica não estiver presente na amostra e o 'Hold de Telemetria (CAN)' estiver ativo,
@@ -303,7 +372,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   } | null>(null);
 
   const updateCursorOverlay = React.useCallback(() => {
-    if (!cursorEnabled || activeIdx === null || filteredRecords.length === 0) {
+    if (!cursorEnabled || activeIdx === null || filteredRecords.length === 0 || selectedMetrics.length === 0) {
       setCursorPos(null);
       return;
     }
@@ -433,7 +502,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         position: 'top',
         align: 'end',
         labels: {
-          color: '#cbd5e1',
+          color: isDark ? '#cbd5e1' : '#334155',
           font: {
             family: 'Plus Jakarta Sans',
             size: 12,
@@ -447,10 +516,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#f8fafc',
-        bodyColor: '#e2e8f0',
-        borderColor: 'rgba(51, 65, 85, 0.8)',
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+        titleColor: isDark ? '#f8fafc' : '#0f172a',
+        bodyColor: isDark ? '#e2e8f0' : '#334155',
+        borderColor: isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(203, 213, 225, 0.9)',
         borderWidth: 1,
         padding: 12,
         cornerRadius: 8,
@@ -483,10 +552,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
     scales: {
       x: {
         grid: {
-          color: 'rgba(51, 65, 85, 0.35)',
+          color: isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(226, 232, 240, 0.8)',
         },
         ticks: {
-          color: '#94a3b8',
+          color: isDark ? '#94a3b8' : '#475569',
           font: {
             family: 'JetBrains Mono',
             size: 11,
@@ -504,10 +573,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         min: yAxisScale.mode === 'manual' && yAxisScale.minY !== '' ? Number(yAxisScale.minY) : undefined,
         max: yAxisScale.mode === 'manual' && yAxisScale.maxY !== '' ? Number(yAxisScale.maxY) : undefined,
         grid: {
-          color: 'rgba(51, 65, 85, 0.35)',
+          color: isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(226, 232, 240, 0.8)',
         },
         ticks: {
-          color: '#94a3b8',
+          color: isDark ? '#94a3b8' : '#475569',
           font: {
             family: 'JetBrains Mono',
             size: 11,
@@ -516,7 +585,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         title: {
           display: hasY1Axis || hasY2Axis,
           text: 'Eixo Y',
-          color: '#94a3b8',
+          color: isDark ? '#94a3b8' : '#334155',
           font: {
             family: 'JetBrains Mono',
             size: 10,
@@ -632,8 +701,8 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
     const ctx = exportCanvas.getContext('2d');
     if (!ctx) return;
 
-    // Fundo escuro idêntico ao tema da aplicação (slate-950)
-    ctx.fillStyle = '#090d16';
+    // Fundo idêntico ao tema atual da aplicação
+    ctx.fillStyle = isDark ? '#090d16' : '#ffffff';
     ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
     // Desenhar o gráfico original do Chart.js
@@ -735,11 +804,41 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         if (ptY !== null && ptY >= top - 6 && ptY <= bottom + 6) {
           ctx.beginPath();
           ctx.arc(x, ptY, isPinned ? 5.5 : 4.5, 0, Math.PI * 2);
-          ctx.fillStyle = m.color;
-          ctx.fill();
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = '#090d16';
-          ctx.stroke();
+          if (isDark) {
+            ctx.fillStyle = m.color;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#090d16';
+            ctx.stroke();
+          } else {
+            // No tema claro, respeita o estilo dos pontos
+            if (lightPointStyle === 'white-core') {
+              ctx.fillStyle = '#ffffff';
+              ctx.fill();
+              ctx.lineWidth = 2.5;
+              ctx.strokeStyle = m.color;
+              ctx.stroke();
+            } else if (lightPointStyle === 'dark') {
+              ctx.fillStyle = '#0f172a';
+              ctx.fill();
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = m.color;
+              ctx.stroke();
+            } else if (lightPointStyle === 'custom') {
+              ctx.fillStyle = customPointColor || '#4f46e5';
+              ctx.fill();
+              ctx.lineWidth = 1.5;
+              ctx.strokeStyle = '#0f172a';
+              ctx.stroke();
+            } else {
+              // contrast
+              ctx.fillStyle = m.color;
+              ctx.fill();
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = '#0f172a';
+              ctx.stroke();
+            }
+          }
         }
       });
 
@@ -776,19 +875,19 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         }
 
         // Fundo do cartão
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.15)';
         ctx.shadowBlur = 12;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 4;
 
-        ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+        ctx.fillStyle = isDark ? 'rgba(10, 15, 29, 0.94)' : 'rgba(255, 255, 255, 0.97)';
         drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 8);
         ctx.fill();
 
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
 
-        ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : 'rgba(99, 102, 241, 0.7)';
+        ctx.strokeStyle = isPinned ? 'rgba(245, 158, 11, 0.7)' : (isDark ? 'rgba(99, 102, 241, 0.7)' : 'rgba(99, 102, 241, 0.9)');
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
@@ -796,7 +895,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         ctx.beginPath();
         ctx.moveTo(boxX + 8, boxY + headerHeight);
         ctx.lineTo(boxX + boxW - 8, boxY + headerHeight);
-        ctx.strokeStyle = 'rgba(51, 65, 85, 0.6)';
+        ctx.strokeStyle = isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(226, 232, 240, 0.9)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -804,7 +903,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = isPinned ? '#fbbf24' : '#a5b4fc';
+        ctx.fillStyle = isPinned ? '#fbbf24' : (isDark ? '#a5b4fc' : '#4338ca');
         ctx.fillText(`Amostra: ${sampleLabel}`, boxX + padX, boxY + headerHeight / 2);
 
         // Posição no total
@@ -831,14 +930,14 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.font = '10px "Plus Jakarta Sans", sans-serif';
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
           const maxKeyW = boxW - 90;
           ctx.fillText(mv.key, boxX + padX + 14, itemY, maxKeyW);
 
           // Valor numérico formatado
           ctx.textAlign = 'right';
           ctx.font = 'bold 11px "JetBrains Mono", monospace';
-          ctx.fillStyle = '#f8fafc';
+          ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
           ctx.fillText(mv.valueStr, boxX + boxW - padX, itemY);
 
           // Indicador [hold] se for Sample & Hold
@@ -896,130 +995,29 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
   const isBar = chartType === 'bar';
 
-  // Empty state view: rendered when app is initialized or cleared without data
-  if (records.length === 0) {
-    return (
-      <div className="flex flex-col gap-6 bg-slate-900/90 border border-slate-800 rounded-xl p-5 sm:p-7 shadow-sm">
-        {/* Banner de Boas-Vindas & Inicialização Limpa */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-6 border-b border-slate-800/80">
-          <div className="flex items-start gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 text-indigo-400 shadow-inner shrink-0">
-              <Database className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">LogPlotter Iniciado</h2>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-semibold">
-                  Início Limpo (0 registros)
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-                O aplicativo foi iniciado sem nenhum dado carregado. Você pode importar seus próprios arquivos de telemetria (<span className="text-indigo-300 font-mono">.csv, .json, .log, .ndjson</span>) ou clicar diretamente em qualquer um dos <strong>{SAMPLE_DATASETS.length} exemplos prontos</strong> integrados abaixo.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            {onOpenLoadModal && (
-              <button
-                type="button"
-                onClick={onOpenLoadModal}
-                className="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
-              >
-                <FolderOpen className="w-4 h-4" />
-                <span>Carregar Meu Arquivo</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Grade com Todos os Exemplos Integrados */}
-        <div>
-          <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
-                Biblioteca de Exemplos Integrados ({SAMPLE_DATASETS.length} Conjuntos de Teste)
-              </h3>
-            </div>
-            <span className="text-[11px] text-slate-400">Clique para carregar e plotar imediatamente</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-            {SAMPLE_DATASETS.map((sample) => {
-              const recordCount = sample.data ? sample.data.length : 0;
-              return (
-                <div
-                  key={sample.id}
-                  className="group relative flex flex-col justify-between bg-slate-950/70 border border-slate-800/90 hover:border-indigo-500/60 rounded-xl p-4 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-950/30 hover:bg-slate-950/90"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-950/70 border border-indigo-800/50 px-2 py-0.5 rounded-md">
-                        {sample.badge}
-                      </span>
-                      <span className="text-[10px] font-mono font-medium text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                        {recordCount} reg
-                      </span>
-                    </div>
-
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-white transition-colors mb-1.5">
-                      {sample.name}
-                    </h4>
-
-                    <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-3">
-                      {sample.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-2.5 border-t border-slate-850/80 mt-1 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {sample.id.includes('csv') ? 'Tabela CSV' : 'Série Temporal'}
-                    </span>
-                    {onSelectSample && (
-                      <button
-                        type="button"
-                        onClick={() => onSelectSample(sample)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/80 hover:bg-indigo-600 border border-indigo-700/50 hover:border-indigo-500 rounded-lg transition-all shadow-sm cursor-pointer"
-                      >
-                        <span>Carregar</span>
-                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Rodapé com Dicas de Formato */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-950/50 border border-slate-800/60 rounded-lg text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Formatos aceitos nativamente: <strong>.csv, .json, .ndjson, .log</strong></span>
-          </div>
-          <span className="text-slate-500 text-[11px]">
-            Detecção automática de colunas numéricas, eixos triplos Y/Y1/Y2 e sincronização temporal.
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden transition-all duration-200 ${
-        isFullscreen ? 'fixed inset-0 z-50 p-6 bg-slate-950' : 'w-full'
+      className={`flex flex-col border rounded-xl overflow-hidden transition-all duration-200 ${
+        isFullscreen
+          ? isDark
+            ? 'fixed inset-0 z-50 p-6 bg-slate-950 text-slate-100 border-slate-800'
+            : 'fixed inset-0 z-50 p-6 bg-slate-100 text-slate-900 border-slate-300'
+          : isDark
+          ? 'w-full bg-slate-900/90 border-slate-800 text-slate-100 shadow-sm'
+          : 'w-full bg-white border-slate-200 text-slate-900 shadow-sm'
       }`}
     >
       {/* Top Header of Chart Viewport */}
-      <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5 border-b border-slate-800 bg-slate-900/50">
+      <div
+        className={`flex flex-wrap items-center justify-between gap-4 px-5 py-3.5 border-b transition-colors duration-200 ${
+          isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50/80'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
-            <span className="text-xs font-semibold text-slate-400 tracking-wider">
-              EIXO X: <span className="text-indigo-400 font-mono">{xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey}</span>
+            <span className={`text-xs font-semibold tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              EIXO X: <span className="text-indigo-500 font-mono font-medium">{xAxisKey === '_index' ? 'Índice sequencial' : xAxisKey}</span>
             </span>
             <span className="text-xs text-slate-500 font-mono tabular-nums">
               Mostrando {filteredRecords.length} de {records.length} registros (Ptos {startIdx + 1}–{endIdx + 1})
@@ -1030,25 +1028,35 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
         {/* Action Controls */}
         <div className="flex items-center gap-2">
           {/* Quick window zoom buttons */}
-          <div className="hidden sm:flex items-center gap-1 p-0.5 bg-slate-800/80 rounded-lg border border-slate-700/60 text-xs">
+          <div
+            className={`hidden sm:flex items-center gap-1 p-0.5 rounded-lg border text-xs ${
+              isDark ? 'bg-slate-800/80 border-slate-700/60' : 'bg-slate-100 border-slate-200'
+            }`}
+          >
             <button
               onClick={handleResetZoom}
               title="Ver todos os pontos"
-              className="px-2.5 py-1 text-slate-300 hover:text-white rounded hover:bg-slate-700/60 transition-colors"
+              className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-300 hover:text-white hover:bg-slate-700/60' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200'
+              }`}
             >
               100%
             </button>
             <button
               onClick={() => handleRangePreset(50)}
               title="Últimos 50%"
-              className="px-2.5 py-1 text-slate-300 hover:text-white rounded hover:bg-slate-700/60 transition-colors"
+              className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-300 hover:text-white hover:bg-slate-700/60' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200'
+              }`}
             >
               50%
             </button>
             <button
               onClick={() => handleRangePreset(25)}
               title="Últimos 25%"
-              className="px-2.5 py-1 text-slate-300 hover:text-white rounded hover:bg-slate-700/60 transition-colors"
+              className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-300 hover:text-white hover:bg-slate-700/60' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200'
+              }`}
             >
               25%
             </button>
@@ -1058,7 +1066,9 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                 onRangeChange([records.length - count, records.length - 1]);
               }}
               title="Últimos 30 registros"
-              className="px-2.5 py-1 text-slate-300 hover:text-white rounded hover:bg-slate-700/60 transition-colors"
+              className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-300 hover:text-white hover:bg-slate-700/60' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200'
+              }`}
             >
               Últimos 30
             </button>
@@ -1067,30 +1077,40 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
           {/* Botão Cursor Eixo X */}
           <button
             onClick={toggleCursor}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
               cursorEnabled
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-500/20'
-                : 'text-slate-300 bg-slate-800 hover:bg-slate-700 border-slate-700/60'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-xs'
+                : isDark
+                ? 'text-slate-300 bg-slate-800 hover:bg-slate-700 border-slate-700/60'
+                : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300 shadow-xs'
             }`}
             title="Ativar/desativar cursor vertical do eixo X para inspecionar amostras"
           >
-            <Crosshair className={`w-3.5 h-3.5 ${cursorEnabled ? 'text-white' : 'text-indigo-400'}`} />
+            <Crosshair className={`w-3.5 h-3.5 ${cursorEnabled ? 'text-white' : 'text-indigo-500'}`} />
             <span>Cursor Eixo X</span>
-            {isPinned && <span className="text-[10px] bg-amber-500/80 text-white px-1.5 py-0.2 rounded font-mono font-bold">Fixado</span>}
+            {isPinned && <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.2 rounded font-mono font-bold">Fixado</span>}
           </button>
 
           <button
             onClick={handleExportPNG}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700/60 transition-colors"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+              isDark
+                ? 'text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white border-slate-700/60'
+                : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300 shadow-xs'
+            }`}
             title="Exportar imagem PNG em alta resolução"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-400" />
+            <Download className="w-3.5 h-3.5 text-indigo-500" />
             <span className="hidden md:inline">Salvar PNG</span>
           </button>
 
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 text-slate-400 hover:text-slate-100 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700/60 transition-colors"
+            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+              isDark
+                ? 'text-slate-400 hover:text-slate-100 bg-slate-800 hover:bg-slate-700 border-slate-700/60'
+                : 'text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border-slate-300 shadow-xs'
+            }`}
             title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1100,23 +1120,32 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
       {/* HUD de Inspeção das Amostras no Cursor do Eixo X */}
       {cursorEnabled && activeIdx !== null && filteredRecords[activeIdx] && selectedMetrics.length > 0 && (
-        <div className="px-5 py-2.5 bg-slate-950/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div
+          className={`px-5 py-2.5 border-b flex flex-wrap items-center justify-between gap-3 text-xs transition-colors duration-200 ${
+            isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-100 border-slate-200'
+          }`}
+        >
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-950/80 border border-indigo-700/80 text-indigo-300 font-mono font-medium">
-              <Crosshair className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Amostra: <strong className="text-white">{labels[activeIdx]}</strong></span>
-              <span className="text-indigo-400 text-[10px]">({startIdx + activeIdx + 1}/{records.length})</span>
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-mono font-medium ${
+                isDark ? 'bg-indigo-950/80 border-indigo-700/80 text-indigo-300' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+              }`}
+            >
+              <Crosshair className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Amostra: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{labels[activeIdx]}</strong></span>
+              <span className={`text-[10px] ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>({startIdx + activeIdx + 1}/{records.length})</span>
             </div>
-
 
             {/* Fixar ou Liberar */}
             <button
               type="button"
               onClick={() => setIsPinned(!isPinned)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono transition-colors border ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono transition-colors border cursor-pointer ${
                 isPinned
                   ? 'bg-amber-950/80 text-amber-300 border-amber-700 hover:bg-amber-900'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                  : isDark
+                  ? 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                  : 'bg-white text-slate-600 border-slate-300 hover:text-slate-900'
               }`}
               title={isPinned ? 'Cursor fixado no ponto. Clique para liberar' : 'Clique no gráfico ou aqui para fixar o cursor'}
             >
@@ -1132,23 +1161,27 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
               return (
                 <div
                   key={m.key}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900/90 border border-slate-800 shadow-sm"
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border shadow-xs ${
+                    isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+                  }`}
                 >
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                     style={{ backgroundColor: m.color }}
                   />
-                  <span className="text-[11px] font-mono text-slate-400 truncate max-w-[130px]" title={m.key}>
+                  <span className={`text-[11px] font-mono truncate max-w-[130px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`} title={m.key}>
                     {m.key}:
                   </span>
-                  <span className="text-xs font-mono font-bold text-white tabular-nums">
+                  <span className={`text-xs font-mono font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {effective.value !== null
                       ? effective.value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
                       : 'N/D'}
                   </span>
                   {effective.isHeld && (
                     <span
-                      className="text-[9px] font-mono px-1 py-0.2 rounded text-indigo-400 bg-indigo-950/70 border border-indigo-800/50"
+                      className={`text-[9px] font-mono px-1 py-0.2 rounded border ${
+                        isDark ? 'text-indigo-400 bg-indigo-950/70 border-indigo-800/50' : 'text-indigo-600 bg-indigo-50 border-indigo-200'
+                      }`}
                       title="Valor mantido da última amostra válida recebida (Sample & Hold de Telemetria)"
                     >
                       hold
@@ -1158,10 +1191,10 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                     <span
                       className={`text-[9px] font-mono px-1 rounded border font-semibold ${
                         m.yAxis === 'y2'
-                          ? 'text-amber-400 bg-amber-950/70 border-amber-800/70'
+                          ? 'text-amber-500 bg-amber-500/10 border-amber-500/30'
                           : m.yAxis === 'y1'
-                          ? 'text-sky-400 bg-sky-950/70 border-sky-800/70'
-                          : 'text-slate-400 bg-slate-800/70 border-slate-700/70'
+                          ? 'text-sky-500 bg-sky-500/10 border-sky-500/30'
+                          : isDark ? 'text-slate-400 bg-slate-800/70 border-slate-700/70' : 'text-slate-600 bg-slate-100 border-slate-200'
                       }`}
                     >
                       {m.yAxis === 'y2' ? 'Y2' : m.yAxis === 'y1' ? 'Y1' : 'Y'}
@@ -1189,95 +1222,131 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
           isFullscreen ? 'flex-1 min-h-[500px]' : 'h-[440px] md:h-[480px]'
         }`}
       >
-        {selectedMetrics.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <Sliders className="w-10 h-10 text-slate-600 mb-3" />
-            <h3 className="text-base font-semibold text-slate-300">Nenhuma métrica selecionada</h3>
-            <p className="text-sm text-slate-500 max-w-sm mt-1">
-              Selecione uma ou mais variáveis no painel lateral à esquerda para plotar no gráfico interativo.
-            </p>
-          </div>
+        {/* Gráfico Canvas sempre presente para manter a estrutura e grade */}
+        {isBar ? (
+          <Bar ref={chartRef} data={{ labels, datasets }} options={options} />
         ) : (
-          <>
-            {isBar ? (
-              <Bar ref={chartRef} data={{ labels, datasets }} options={options} />
-            ) : (
-              <Line ref={chartRef} data={{ labels, datasets }} options={options} />
-            )}
+          <Line ref={chartRef} data={{ labels, datasets }} options={options} />
+        )}
 
-            {/* DOM Cursor Overlay: 100% reativo, sincronizado e sem travas */}
-            {cursorEnabled && activeIdx !== null && cursorPos && (
+        {/* Overlay elegante quando o gráfico está vazio */}
+        {selectedMetrics.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-6">
+            <div
+              className={`border rounded-xl px-7 py-5 flex flex-col items-center text-center shadow-xl backdrop-blur-md pointer-events-auto max-w-sm transition-colors duration-200 ${
+                isDark ? 'bg-slate-900/95 border-slate-800 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
+              }`}
+            >
               <div
-                className="pointer-events-none absolute inset-0 overflow-hidden z-20 select-none"
-                aria-hidden="true"
+                className={`w-10 h-10 rounded-full border flex items-center justify-center mb-3 shadow-inner ${
+                  isDark ? 'bg-indigo-950/80 border-indigo-700/60 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                }`}
               >
-                {/* Linha Vertical Tracejada */}
-                <div
-                  className={`absolute border-l transition-none ${
-                    isPinned ? 'border-amber-400' : 'border-indigo-400'
-                  }`}
-                  style={{
-                    left: `${cursorPos.x}px`,
-                    top: `${cursorPos.top - 6}px`,
-                    height: `${cursorPos.height + 6}px`,
-                    borderLeftWidth: isPinned ? '2.5px' : '2px',
-                    borderLeftStyle: 'dashed',
-                    opacity: 0.95,
-                    transform: 'translateX(-50%)',
-                  }}
-                />
-
-                {/* Badge Superior com Identificação da Amostra do Eixo X no espaço entre a legenda e o gráfico */}
-                <div
-                  className={`absolute -translate-x-1/2 px-2.5 py-0.5 rounded text-[11px] font-mono font-bold text-white shadow-xl whitespace-nowrap border flex items-center gap-1 transition-none ${
-                    isPinned
-                      ? 'bg-amber-600 border-amber-400 shadow-amber-950/60'
-                      : 'bg-indigo-600 border-indigo-400 shadow-indigo-950/60'
-                  }`}
-                  style={{
-                    left: `${cursorPos.x}px`,
-                    top: `${cursorPos.top - 25}px`,
-                  }}
-                >
-                  <span>{labels[activeIdx] || `#${startIdx + activeIdx + 1}`}</span>
-                  {isPinned && (
-                    <span className="text-[9px] opacity-80 font-sans font-normal ml-0.5">(fixo)</span>
-                  )}
-                </div>
-
-                {/* Marcadores circulares sobre os dados no exato cruzamento (dots) */}
-                {cursorPos.dots.map((dot, i) => (
-                  <div
-                    key={i}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-950 shadow-lg transition-none"
-                    style={{
-                      left: `${cursorPos.x}px`,
-                      top: `${dot.y}px`,
-                      width: isPinned ? 12 : 10,
-                      height: isPinned ? 12 : 10,
-                      backgroundColor: dot.color,
-                    }}
-                    title={`${dot.label}: ${dot.valFormatted}`}
-                  />
-                ))}
+                <Sliders className="w-5 h-5" />
               </div>
-            )}
-          </>
+              <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>Gráfico Vazio</h3>
+              <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Nenhuma variável selecionada no momento. Marque os sinais desejados no painel à esquerda para plotar suas curvas.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* DOM Cursor Overlay: 100% reativo, sincronizado e sem travas */}
+        {cursorEnabled && activeIdx !== null && cursorPos && selectedMetrics.length > 0 && (
+          <div
+            className="pointer-events-none absolute inset-0 overflow-hidden z-20 select-none"
+            aria-hidden="true"
+          >
+            {/* Linha Vertical Tracejada */}
+            <div
+              className={`absolute border-l transition-none ${
+                isPinned ? 'border-amber-400' : 'border-indigo-500'
+              }`}
+              style={{
+                left: `${cursorPos.x}px`,
+                top: `${cursorPos.top - 6}px`,
+                height: `${cursorPos.height + 6}px`,
+                borderLeftWidth: isPinned ? '2.5px' : '2px',
+                borderLeftStyle: 'dashed',
+                opacity: 0.95,
+                transform: 'translateX(-50%)',
+              }}
+            />
+
+            {/* Badge Superior com Identificação da Amostra do Eixo X no espaço entre a legenda e o gráfico */}
+            <div
+              className={`absolute -translate-x-1/2 px-2.5 py-0.5 rounded text-[11px] font-mono font-bold text-white shadow-xl whitespace-nowrap border flex items-center gap-1 transition-none ${
+                isPinned
+                  ? 'bg-amber-600 border-amber-400 shadow-amber-950/60'
+                  : 'bg-indigo-600 border-indigo-400 shadow-indigo-950/60'
+              }`}
+              style={{
+                left: `${cursorPos.x}px`,
+                top: `${cursorPos.top - 25}px`,
+              }}
+            >
+              <span>{labels[activeIdx] || `#${startIdx + activeIdx + 1}`}</span>
+              {isPinned && (
+                <span className="text-[9px] opacity-80 font-sans font-normal ml-0.5">(fixo)</span>
+              )}
+            </div>
+
+            {/* Marcadores circulares sobre os dados no exato cruzamento (dots) */}
+            {cursorPos.dots.map((dot, i) => {
+              const dotBg = !isDark
+                ? lightPointStyle === 'white-core'
+                  ? '#ffffff'
+                  : lightPointStyle === 'dark'
+                  ? '#0f172a'
+                  : lightPointStyle === 'custom'
+                  ? customPointColor || '#4f46e5'
+                  : dot.color
+                : dot.color;
+              const dotBorder = !isDark
+                ? lightPointStyle === 'white-core' || lightPointStyle === 'dark'
+                  ? dot.color
+                  : '#0f172a'
+                : '#020617';
+
+              return (
+                <div
+                  key={i}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-lg transition-none"
+                  style={{
+                    left: `${cursorPos.x}px`,
+                    top: `${dot.y}px`,
+                    width: isPinned ? 13 : 11,
+                    height: isPinned ? 13 : 11,
+                    backgroundColor: dotBg,
+                    borderColor: dotBorder,
+                  }}
+                  title={`${dot.label}: ${dot.valFormatted}`}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
 
       {/* Interactive Range Scrubber Timeline Bar */}
-      <div className="px-5 py-3 border-t border-slate-800 bg-slate-900/60">
-        <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+      <div
+        className={`px-5 py-3 border-t transition-colors duration-200 ${
+          isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50/80'
+        }`}
+      >
+        <div className={`flex items-center justify-between text-xs mb-1.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-300">Filtro de Faixa Temporal:</span>
-            <span className="font-mono text-indigo-400 tabular-nums">
+            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Filtro de Faixa Temporal:</span>
+            <span className="font-mono text-indigo-500 tabular-nums font-semibold">
               Ponto {startIdx + 1} até {endIdx + 1} (Total: {endIdx - startIdx + 1} pontos)
             </span>
           </div>
           <button
             onClick={handleResetZoom}
-            className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors font-medium text-xs"
+            className={`flex items-center gap-1 transition-colors font-medium text-xs cursor-pointer ${
+              isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             <RotateCcw className="w-3 h-3" />
             Redefinir
@@ -1286,7 +1355,7 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-500 w-12 text-right">Início:</span>
+            <span className={`text-xs font-mono w-12 text-right ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Início:</span>
             <input
               type="range"
               min={0}
@@ -1298,13 +1367,15 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                   onRangeChange([val, endIdx]);
                 }
               }}
-              className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+              className={`w-full accent-indigo-500 cursor-pointer h-1.5 rounded-lg ${
+                isDark ? 'bg-slate-800' : 'bg-slate-200'
+              }`}
             />
-            <span className="text-xs font-mono text-slate-400 tabular-nums w-12">{startIdx + 1}</span>
+            <span className={`text-xs font-mono tabular-nums w-12 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{startIdx + 1}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-500 w-12 text-right">Fim:</span>
+            <span className={`text-xs font-mono w-12 text-right ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Fim:</span>
             <input
               type="range"
               min={Math.min(records.length - 1, startIdx + 2)}
@@ -1316,9 +1387,11 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
                   onRangeChange([startIdx, val]);
                 }
               }}
-              className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+              className={`w-full accent-indigo-500 cursor-pointer h-1.5 rounded-lg ${
+                isDark ? 'bg-slate-800' : 'bg-slate-200'
+              }`}
             />
-            <span className="text-xs font-mono text-slate-400 tabular-nums w-12">{endIdx + 1}</span>
+            <span className={`text-xs font-mono tabular-nums w-12 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{endIdx + 1}</span>
           </div>
         </div>
       </div>
